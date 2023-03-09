@@ -1,2 +1,2 @@
-# PetersLab_AnalysisCode
+# Analysis
 Code for common analysis
