@@ -1,4 +1,4 @@
-function [U,Vrec,im_avg_color,frame_info] = AP_preprocess_widefield_pco(im_path)
+function [U,Vrec,im_avg_color,frame_info] = preprocess_widefield_pco(im_path)
 % [U,Vrec,im_color_avg,frame_info] = AP_preprocess_widefield_pco(im_path)
 %
 % SVD-compress widefield imaging from PCO Edge 5.5 camera
