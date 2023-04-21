@@ -76,7 +76,7 @@ for curr_data_path = process_paths
         for curr_color = 1:length(color_names)
             curr_V_fn = fullfile(curr_data_path, ...
                 sprintf('svdTemporalComponents_%s.npy',color_names{curr_color}));
-            writeNPY(Vrec{curr_recording,curr_color}(1:n_components_save,:)',curr_V_fn);
+            writeNPY(Vrec{curr_recording,curr_color}(1:n_components_save,:),curr_V_fn);
         end
     end
 

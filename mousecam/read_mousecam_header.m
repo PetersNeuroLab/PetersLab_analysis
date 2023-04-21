@@ -1,10 +1,11 @@
-function mousecam_header = read_mousecam_header(mousecam_header_fn, flipper_pin)
-% mousecam_header = read_mousecam_header(mousecam_header_fn, flipper_pin)
+function mousecam_header = read_mousecam_header(mousecam_header_data, flipper_pin)
+% mousecam_header = read_mousecam_header(mousecam_header_data, flipper_pin)
 %
 % Get embedded info from face camera videos
 %
 % INPUTS
-% mousecam_header_fn - filename with mousecam header (mousecam_header.bin)
+% mousecam_header_data - EITHER: filename with mousecam header
+% (mousecam_header.bin), or embedded pixels
 % flipper_pin - GPIO pin that the flipper is plugged into
 %
 % OUTPUTS
@@ -26,13 +27,17 @@ function mousecam_header = read_mousecam_header(mousecam_header_fn, flipper_pin)
 % GPIO Pin State
 % ROI position
 
-%% Load and reshape data
+%% Header data: load (if filename), use directly (if data)
 
-fid = fopen(mousecam_header_fn,'r');
-embedded_pixels = fread(fid,[40,Inf]);
-fclose(fid);
+if isstring(mousecam_header_data)
+    fid = fopen(mousecam_header_data,'r');
+    header_pixels = fread(fid,[40,Inf]);
+    fclose(fid);
+else
+    header_pixels = mousecam_header_data;
+end
 
-n_frames = size(embedded_pixels,2);
+n_frames = size(header_pixels,2);
 
 % Initialize header structure
 mousecam_header = struct( ...
@@ -42,7 +47,7 @@ mousecam_header = struct( ...
 
 %%  Timestamp
 
-timestamp_pixels = embedded_pixels(1:4,:);
+timestamp_pixels = header_pixels(1:4,:);
 bin_val_pixels = dec2bin(timestamp_pixels, 8);
 bin_val_pixels = reshape(bin_val_pixels', 32, n_frames)';
 
@@ -66,14 +71,14 @@ mousecam_header.timestamps = seconds';
 
 %% Frame counter
 
-frame_num_pixels = embedded_pixels(25:28,:);
+frame_num_pixels = header_pixels(25:28,:);
 bin_val_pixels = dec2bin(frame_num_pixels, 8);
 bin_val_pixels = reshape(bin_val_pixels', 32, n_frames)';
 mousecam_header.frame_num = bin2dec(bin_val_pixels);
 
 %% GPIO pin states
 
-pin_state_pixels = embedded_pixels(33:36,:);
+pin_state_pixels = header_pixels(33:36,:);
 bin_val_pixels = dec2bin(pin_state_pixels, 8);
 bin_val_pixels = reshape(bin_val_pixels', 32, n_frames)';
 mousecam_header.flipper = logical(str2num(bin_val_pixels(:, flipper_pin+1))); % pin numbering starts from 0 
