@@ -24,12 +24,10 @@ for animal_path = {local_data_dir(animal_paths).name}
     for curr_day_path = find(day_paths)
         curr_day_path_tiff = dir( ...
             fullfile(animal_dir(curr_day_path).folder, ...
-            animal_dir(curr_day_path).name,'*.tif'));
+            animal_dir(curr_day_path).name,'widefield','*.tif'));
         % If day path contains tiffs, add path to to-process list
         if ~isempty(curr_day_path_tiff)
-            process_paths{end+1} = ...
-                fullfile(animal_dir(curr_day_path).folder, ...
-                animal_dir(curr_day_path).name);
+            process_paths{end+1} = curr_day_path_tiff.folder;
         end
     end
 end
@@ -43,8 +41,6 @@ for curr_data_path = process_paths
     [U,Vrec,im_avg_color,frame_info] = plab.wf.preprocess_widefield_hamamatsu(curr_data_path);
 
     %% Save preprocessed widefield data locally
-
-    disp('Saving preprocessed imaging to local...');
 
     % Set number of components to save
     max_components_save = 2000;
@@ -77,6 +73,37 @@ for curr_data_path = process_paths
             curr_V_fn = fullfile(curr_data_path, ...
                 sprintf('svdTemporalComponents_%s.npy',color_names{curr_color}));
             writeNPY(Vrec{curr_recording,curr_color}(1:n_components_save,:),curr_V_fn);
+        end
+    end
+
+    %% Move data onto server
+    % Check if the server is available
+    if ~exist(plab.locations.server_data_path,'dir')
+        warning('Server not accessible at %s',plab.locations.server_data_path)
+        return
+    end
+
+    % Move local data directories to server
+    curr_data_path_server = strrep(curr_data_path, ...
+        plab.locations.local_data_path,plab.locations.server_data_path);
+    [status,message] = movefile(curr_data_path,curr_data_path_server);
+    if ~status
+        warning('Failed copying to server: %s',message);
+    else
+        disp('Copied data to server')
+    end
+
+    % Delete empty local folders
+    % (2 hierarchy levels: day > animal)
+    try
+        curr_hierarchy_path = fileparts(curr_data_path);
+        for hierarchy_levels = 1:2
+            hierarchy_dir = dir(curr_hierarchy_path);
+            if all(contains({hierarchy_dir.name},'.'))
+                rmdir(curr_hierarchy_path)
+                % Move up one step in hierarchy
+                curr_hierarchy_path = fileparts(curr_hierarchy_path);
+            end
         end
     end
 

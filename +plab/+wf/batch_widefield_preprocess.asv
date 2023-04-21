@@ -1,5 +1,11 @@
 %% Batch process widefield images on rig
 
+% TO DO: 
+% don't save locally, save direct to server
+% figure out which image split should go into which protocol folder by
+% matching closest time (adapt lilrig one - at bottom)
+
+
 %% Find folders with data
 
 local_data_dir = dir(plab.locations.local_data_path);
@@ -34,21 +40,9 @@ for curr_data_path = process_paths
     curr_data_path = cell2mat(curr_data_path);
 
     %% Widefield preprocessing function
-    [U,Vrec,im_avg_color,frame_info] = AP_preprocess_widefield_hc(curr_data_path);
-
-    % svd reconstruction
-    example_fluorescence_blue = AP_svdFrameReconstruct(cell2mat(U(1)), cell2mat(Vrec(1)));
-    example_fluorescence_violet = AP_svdFrameReconstruct(cell2mat(U(2)), cell2mat(Vrec(2)));
-
-    AP_imscroll(example_fluorescence_blue);
-    axis image;
-
-    AP_imscroll(example_fluorescence_violet);
-    axis image;
+    [U,Vrec,im_avg_color,frame_info] = plab.wf.preprocess_widefield_hamamatsu(curr_data_path);
 
     %% Save preprocessed widefield data locally
-
-    experiment_path = 'D:\LocalData';
 
     disp('Saving preprocessed imaging to local...');
 
@@ -60,19 +54,19 @@ for curr_data_path = process_paths
     color_names = {'blue','violet'};
 
     % Save frame information in experiment folder
-    frame_info_fn = fullfile(experiment_path,'widefield_frame_info');
+    frame_info_fn = fullfile(curr_data_path,'widefield_frame_info');
     save(frame_info_fn,'frame_info','-v7.3');
 
     % Save mean images in experiment folder by color
     for curr_color = 1:length(color_names)
-        curr_mean_im_fn = fullfile(experiment_path, ...
+        curr_mean_im_fn = fullfile(curr_data_path, ...
             sprintf('meanImage_%s.npy',color_names{curr_color}));
         writeNPY(im_avg_color(:,:,curr_color),curr_mean_im_fn);
     end
 
     % Save spatial components in experiment (animal/day) folder by color
     for curr_color = 1:length(color_names)
-        curr_U_fn = fullfile(experiment_path, ...
+        curr_U_fn = fullfile(curr_data_path, ...
             sprintf('svdSpatialComponents_%s.npy',color_names{curr_color}));
         writeNPY(U{curr_color}(:,:,1:n_components_save),curr_U_fn);
     end
@@ -80,12 +74,14 @@ for curr_data_path = process_paths
     % Save temporal components in associated recording folders
     for curr_recording = 1:size(Vrec,1)
         for curr_color = 1:length(color_names)
-            curr_V_fn = fullfile(experiment_path, ...
+            curr_V_fn = fullfile(curr_data_path, ...
                 sprintf('svdTemporalComponents_%s.npy',color_names{curr_color}));
-            writeNPY(Vrec{curr_recording,curr_color}(1:n_components_save,:)',curr_V_fn);
+            writeNPY(Vrec{curr_recording,curr_color}(1:n_components_save,:),curr_V_fn);
         end
     end
 
+    % Move data onto server (except raw tiff) 
+keyboard
     disp('Finished.');
 
 end
