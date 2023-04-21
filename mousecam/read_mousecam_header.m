@@ -29,12 +29,14 @@ function mousecam_header = read_mousecam_header(mousecam_header_data, flipper_pi
 
 %% Header data: load (if filename), use directly (if data)
 
-if isstring(mousecam_header_data)
+if ischar(mousecam_header_data) || isstring(mousecam_header_data)
     fid = fopen(mousecam_header_data,'r');
     header_pixels = fread(fid,[40,Inf]);
     fclose(fid);
-else
+elseif isnumeric(mousecam_header_data)
     header_pixels = mousecam_header_data;
+else
+    error('Mousecam header data: unexpected format');
 end
 
 n_frames = size(header_pixels,2);
