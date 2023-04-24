@@ -116,7 +116,7 @@ end
 timestamp_diff = frame_info.time_from_last(2:end);
 
 % Find recording boundaries (time between frames > threshold)
-recording_boundary_thresh = 20000; % miliseconds between frames to define recording
+recording_boundary_thresh = 2; % seconds between frames to define recording
 recording_frame_boundary = [0,find(timestamp_diff > recording_boundary_thresh),frame_info(end).frame_num(end)]+1;
 
 % Get recording for each frame

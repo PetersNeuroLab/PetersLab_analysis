@@ -70,8 +70,12 @@ for curr_data_path = process_paths
     % Save temporal components in associated recording folders
     for curr_recording = 1:size(Vrec,1)
         for curr_color = 1:length(color_names)
-            curr_V_fn = fullfile(curr_data_path, ...
+            % Put V's into separate recording paths
+            curr_V_fn = fullfile(curr_data_path,sprintf('recording_%d',curr_recording), ...
                 sprintf('svdTemporalComponents_%s.npy',color_names{curr_color}));
+            % Make recording path
+            mkdir(fileparts(curr_V_fn));
+            % Write V to file
             writeNPY(Vrec{curr_recording,curr_color}(1:n_components_save,:),curr_V_fn);
         end
     end
@@ -83,15 +87,61 @@ for curr_data_path = process_paths
         return
     end
 
-    % Move local data directories to server
-    curr_data_path_server = strrep(curr_data_path, ...
-        plab.locations.local_data_path,plab.locations.server_data_path);
-    [status,message] = movefile(curr_data_path,curr_data_path_server);
-    if ~status
-        warning('Failed copying to server: %s',message);
-    else
-        disp('Copied data to server')
+    % Move local data to server:
+    local_data_dir = dir(curr_data_path);
+
+    % Move day-relevant files to day folder
+    local_data_dayfiles_idx = ~[local_data_dir.isdir];
+    for curr_file_idx = find(local_data_dayfiles_idx)
+        % Local filename
+        curr_local_filename = fullfile(local_data_dir(curr_file_idx).folder, ...
+            local_data_dir(curr_file_idx).name);
+        % Server filename: replace path from local data to server
+        curr_server_filename = strrep(curr_local_filename, ...
+            plab.locations.local_data_path,plab.locations.server_data_path);
+        % Make server path (if it doesn't exist)
+        if ~exist(fileparts(curr_server_filename),'dir')
+            mkdir(fileparts(curr_server_filename));
+        end
+
+        [status,message] = movefile(curr_local_filename,curr_server_filename);
+        if ~status
+            warning('Failed copying to server: %s',message);
+        else
+            fprintf('Copied %s --> %s \n',curr_local_filename,curr_server_filename);
+        end
     end
+
+    % Move protocol-relevant files to protocol folders
+    local_data_protocolfiles_idx = [local_data_dir.isdir] & ~contains({local_data_dir.name},'.');
+
+    % get number of frames in each recording
+    recording_frames_n = sum(cellfun(@(x) size(x,2),Vrec),2);
+    recording_start_times = str2num(datestr( ...
+        frame_info.timestamp([0,recording_frames_n(1:end-1)]+1),'HHMM'));
+
+    % Get Protocol folder with closest time for each recording
+    curr_server_path = strrep(fileparts(curr_data_path), ...
+        plab.locations.local_data_path,plab.locations.server_data_path);
+    curr_server_dir = dir(curr_server_path);
+    [~,protocol_regexp] = regexp({curr_server_dir.name},'Protocol_(\d*)','match','tokens');
+    protocol_regexp_cat = cellfun(@(x) horzcat(x{:}),protocol_regexp,'uni',false);
+    curr_server_protocol_times = cellfun(@str2num,horzcat(protocol_regexp_cat{:}));
+
+    %%%% THIS DOESN'T WORK?? WHY SO DELAYED TIMESTAMP?
+    error('CANNOT PARSE INTO PROTOCOLS YET: TIMESTAMPS ARE WEIRD')
+%     recording_start_times - curr_server_protocol_times
+
+    for curr_file_idx = find(local_data_protocolfiles_idx)
+        % Local path
+        curr_local_filename = fullfile(local_data_dir(curr_file_idx).folder, ...
+            local_data_dir(curr_file_idx).name);
+
+        % Server path: 
+        
+    end
+
+    
 
     % Delete empty local folders
     % (2 hierarchy levels: day > animal)
