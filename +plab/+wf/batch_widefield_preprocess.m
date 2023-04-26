@@ -37,6 +37,8 @@ end
 for curr_data_path = process_paths
     curr_data_path = cell2mat(curr_data_path);
 
+    fprintf('Preprocessing: %s \n',curr_data_path);
+
     %% Widefield preprocessing function
     [U,Vrec,im_avg_color,frame_info] = plab.wf.preprocess_widefield_hamamatsu(curr_data_path);
 

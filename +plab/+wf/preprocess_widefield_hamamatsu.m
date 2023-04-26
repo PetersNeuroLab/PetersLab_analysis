@@ -111,11 +111,12 @@ end
 n_frames = sum(cellfun(@length,{frame_info.frame_num}));
 
 % Find recording boundaries (EITHER: start button was pressed and time
-% frome last frame is zero, OR: long time between frames)
+% frome last frame is zero, OR: long time between frames, tag on number of
+% frames+1 at end to ensure interpolation works even if one recording)
 recording_boundary_thresh = 2; % seconds between frames to define recording
-recording_start_frame_idx = find( ...
+recording_start_frame_idx = [find( ...
     [frame_info.time_from_last] == 0 | ...
-    [frame_info.time_from_last] >= recording_boundary_thresh);
+    [frame_info.time_from_last] >= recording_boundary_thresh),n_frames+1];
 
 % Get recording for each frame
 im_rec_idx = mat2cell( ....
