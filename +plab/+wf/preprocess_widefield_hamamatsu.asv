@@ -15,10 +15,10 @@ function [U,Vrec,im_avg,frame_info] = preprocess_widefield_hamamatsu(im_path)
 % im_avg: average raw image (by color)
 % frame_info: header information for each frame 
 
+
 verbose = true; % Turn off messages by default
 
-%% Set maximum number of components to keep
-
+% Set maximum number of components to keep
 max_components = 2000;
 
 

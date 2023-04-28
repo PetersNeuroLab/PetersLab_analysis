@@ -44,10 +44,6 @@ for curr_data_path = process_paths
 
     %% Save preprocessed widefield data locally
 
-    % Set number of components to save
-    max_components_save = 2000;
-    n_components_save = min(max_components_save,size(U{1},3));
-
     % Assume 2 colors in order of blue/purple
     color_names = {'blue','violet'};
 
@@ -66,7 +62,7 @@ for curr_data_path = process_paths
     for curr_color = 1:length(color_names)
         curr_U_fn = fullfile(curr_data_path, ...
             sprintf('svdSpatialComponents_%s.npy',color_names{curr_color}));
-        writeNPY(U{curr_color}(:,:,1:n_components_save),curr_U_fn);
+        writeNPY(U{curr_color},curr_U_fn);
     end
 
     % Save temporal components in associated recording folders
@@ -78,7 +74,7 @@ for curr_data_path = process_paths
             % Make recording path
             mkdir(fileparts(curr_V_fn));
             % Write V to file
-            writeNPY(Vrec{curr_recording,curr_color}(1:n_components_save,:),curr_V_fn);
+            writeNPY(Vrec{curr_recording,curr_color},curr_V_fn);
         end
     end
 
