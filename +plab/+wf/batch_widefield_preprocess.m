@@ -22,12 +22,15 @@ for animal_path = {local_data_dir(animal_paths).name}
         [animal_dir.isdir];
     % Check if day paths contain tiffs
     for curr_day_path = find(day_paths)
-        curr_day_path_tiff = dir( ...
-            fullfile(animal_dir(curr_day_path).folder, ...
-            animal_dir(curr_day_path).name,'widefield','*.tif'));
+        curr_widefield_path = fullfile(animal_dir(curr_day_path).folder, ...
+            animal_dir(curr_day_path).name,'widefield');
+
+        curr_day_path_tiff = dir(fullfile(curr_widefield_path,'*.tif'));
+        curr_day_path_dcimg = dir(fullfile(curr_widefield_path,'*.dcimg'));
+
         % If day path contains tiffs, add path to to-process list
-        if ~isempty(curr_day_path_tiff)
-            process_paths{end+1} = curr_day_path_tiff.folder;
+        if ~isempty(curr_day_path_tiff) || ~isempty(curr_day_path_dcimg)
+            process_paths{end+1} = curr_widefield_path;
         end
     end
 end
@@ -123,6 +126,9 @@ for curr_data_path = process_paths
     recording_start_times = str2num(char(frame_timestamp_cat(recording_start_frame),'HHmm'));
 
     % Get Protocol folder with closest previous time for each recording
+    % NOTE: THIS DOESN'T WORK! THE TIMESTAMPS ON THE VIDEOS ARE TOTALLY OFF
+    % FROM THE PROTOCOL TIMES?? E.G. A VIDEO OFTEN STARTS AFTER THE
+    % TIMESTAMP FOR THE NEXT PROTOCOL, SO THE TIMESTAMP IS IMPOSSIBLE
     curr_server_path = strrep(fileparts(curr_data_path), ...
         plab.locations.local_data_path,plab.locations.server_data_path);
     curr_server_dir = dir(curr_server_path);
@@ -132,7 +138,7 @@ for curr_data_path = process_paths
     curr_server_protocol_times = cellfun(@str2num,horzcat(protocol_regexp_cat{:}));
 
     recording_protocol_idx = arrayfun(@(x) ...
-        find(recording_start_times(x) - curr_server_protocol_times >= 0,1,'last'), ...
+        find(recording_start_times(x) - curr_server_protocol_times > 0,1,'last'), ...
         1:length(recording_start_times));
 
     % (sanity check: there should be no overlapping protocol indices)

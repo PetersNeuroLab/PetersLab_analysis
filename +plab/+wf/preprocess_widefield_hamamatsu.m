@@ -233,7 +233,7 @@ end
 
 %% Split V's by recording (instead of by file)
 
-if verbose; disp('Applying SVD spatial components to full data...');end
+if verbose; disp('Splitting SVD temporal components by recording...');end
 
 % Store V's as recordings x color
 Vrec = cell(length(recording_start_frame_idx),n_colors);
