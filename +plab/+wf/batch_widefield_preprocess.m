@@ -169,10 +169,11 @@ for curr_process_files_idx = 1:length(process_files)
     % Move protocol-relevant files to protocol folders
     local_data_protocolfiles_idx = find([local_data_dir.isdir] & ~contains({local_data_dir.name},'.'));
 
-    % Get timestamp of first frame in each recording
-    [~,recording_start_frame] = unique([frame_info.rec_idx]);
-    frame_timestamp_cat = [frame_info.timestamp];
-    recording_start_times = str2num(char(frame_timestamp_cat(recording_start_frame),'HHmm'));
+    %%% TEMPORARY: JUST ASSUME PROTOCOLS ARE IN ORDER OF RECORDINGS
+%     % Get timestamp of first frame in each recording
+%     [~,recording_start_frame] = unique([frame_info.rec_idx]);
+%     frame_timestamp_cat = [frame_info.timestamp];
+%     recording_start_times = str2num(char(frame_timestamp_cat(recording_start_frame),'HHmm'));
 
     % Get Protocol folder with closest previous time for each recording
     % NOTE: THIS DOESN'T WORK! THE TIMESTAMPS ON THE VIDEOS ARE TOTALLY OFF
@@ -186,9 +187,10 @@ for curr_process_files_idx = 1:length(process_files)
     protocol_regexp_cat = cellfun(@(x) horzcat(x{:}),protocol_regexp,'uni',false);
     curr_server_protocol_times = cellfun(@str2num,horzcat(protocol_regexp_cat{:}));
 
-    recording_protocol_idx = arrayfun(@(x) ...
-        find(recording_start_times(x) - curr_server_protocol_times > 0,1,'last'), ...
-        1:length(recording_start_times));
+%     recording_protocol_idx = arrayfun(@(x) ...
+%         find(recording_start_times(x) - curr_server_protocol_times > 0,1,'last'), ...
+%         1:length(recording_start_times));
+    recording_protocol_idx = 1:length(curr_server_protocol_times);
 
     % (sanity check: there should be no overlapping protocol indices)
     if length(unique(recording_protocol_idx)) ~= length(recording_protocol_idx)
