@@ -62,37 +62,13 @@ for curr_process_files_idx = 1:length(process_files)
         plab.locations.local_data_path,plab.locations.server_data_path);
 
     curr_protocol_paths = dir(fullfile(curr_server_path,'Protocol*'));
-    curr_timelite_filenames = cellfun(@(day_path,protocol_path) ...
-        fullfile(day_path,protocol_path,'timelite.mat'), ...
-        {curr_protocol_paths.folder},{curr_protocol_paths.name},'uni',false);
+    curr_timelite_filenames = 
 
-    n_widefield_frames = nan(length(curr_timelite_filenames),1);
-    for curr_protocol = 1:length(curr_timelite_filenames)
-
-        % Set level for TTL threshold
-        ttl_thresh = 2;
-
-        % Load timelite
-        timelite = load(curr_timelite_filenames{curr_protocol});
-
-        % Widefield times
-        widefield_idx = strcmp({timelite.daq_info.channel_name}, 'widefield_camera');
-        widefield_thresh = timelite.data(:,widefield_idx) >= ttl_thresh;
-        widefield_expose_times = timelite.timestamps(find(diff(widefield_thresh) == 1) + 1);
-
-        % Store number of frames
-        n_widefield_frames(curr_protocol) = length(widefield_expose_times);
-
-    end
-
-    %%%%% ALSO TEMPORARY: optionally enter number of frames per recording
-    %%%%% as an input to preprocessing function 
-    [U,Vrec,im_avg_color,frame_info] = plab.wf.preprocess_widefield_hamamatsu(curr_process_files,n_widefield_frames);
+    local_filename = make_local_filename(animal,rec_day,rec_time,filepart1,...,filepartN)
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    % TO DO - WHEN THINGS ARE BACK TO NORMAL:
-%     [U,Vrec,im_avg_color,frame_info] = plab.wf.preprocess_widefield_hamamatsu(curr_process_files);
+    [U,Vrec,im_avg_color,frame_info] = plab.wf.preprocess_widefield_hamamatsu(curr_process_files);
 
     %% Save preprocessed widefield data locally
 
