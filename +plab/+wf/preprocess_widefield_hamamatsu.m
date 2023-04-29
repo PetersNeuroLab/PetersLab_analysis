@@ -163,8 +163,8 @@ switch im_filetype
         % Get number of frames across recordings
         im_file_nframes = nan(length(im_files),1);
         for curr_im_idx = 1:length(im_files)
-            dcimg_fid = dcimgmex('open', im_files{curr_im_idx});
-            im_file_nframes(curr_im_idx) = dcimgmex( 'getparam', dcimg_fid, 'NUMBEROF_FRAME' );
+            dcimg_fid = plab.wf.dcimgmex('open', im_files{curr_im_idx});
+            im_file_nframes(curr_im_idx) = plab.wf.dcimgmex( 'getparam', dcimg_fid, 'NUMBEROF_FRAME' );
         end
 
         if sum(im_file_nframes) ~= sum(n_widefield_frames)
@@ -204,9 +204,9 @@ switch im_filetype
         im_info = imfinfo(im_files{1});
         im_size = [im_info(1).Height,im_info(1).Width];
     case 'dcimg'
-        dcimg_fid = dcimgmex('open', im_files{1});
-        im_width = dcimgmex( 'getparam', dcimg_fid, 'IMAGE_WIDTH' );
-        im_height = dcimgmex( 'getparam', dcimg_fid, 'IMAGE_HEIGHT' );
+        dcimg_fid = plab.wf.dcimgmex('open', im_files{1});
+        im_width = plab.wf.dcimgmex( 'getparam', dcimg_fid, 'IMAGE_WIDTH' );
+        im_height = plab.wf.dcimgmex( 'getparam', dcimg_fid, 'IMAGE_HEIGHT' );
         im_size = [im_height,im_width];
 end
 
@@ -270,7 +270,7 @@ switch im_filetype
             curr_im_fn = im_files{curr_im_idx};
 
             % Open file for reading
-            dcimg_fid = dcimgmex('open', im_files{curr_im_idx});
+            dcimg_fid = plab.wf.dcimgmex('open', im_files{curr_im_idx});
 
             for curr_frame_chunk = unique(frame_chunks{curr_im_idx})
                 curr_load_frames = find(frame_chunks{curr_im_idx} == curr_frame_chunk);
@@ -279,7 +279,7 @@ switch im_filetype
                 for curr_load_frame_idx = 1:length(curr_load_frames)
                     curr_frame = curr_load_frames(curr_load_frame_idx);
                     im(:,:,curr_load_frame_idx) = ...
-                        dcimgmex('readframe', dcimg_fid, curr_frame-1)';
+                        plab.wf.dcimgmex('readframe', dcimg_fid, curr_frame-1)';
                 end
 
                 % Loop through illumination colors
@@ -357,7 +357,7 @@ switch im_filetype
             curr_im_fn = im_files{curr_im_idx};
 
             % Open file for reading
-            dcimg_fid = dcimgmex('open', im_files{curr_im_idx});
+            dcimg_fid = plab.wf.dcimgmex('open', im_files{curr_im_idx});
 
             for curr_frame_chunk = unique(frame_chunks{curr_im_idx})
                 curr_load_frames = find(frame_chunks{curr_im_idx} == curr_frame_chunk);
@@ -366,8 +366,7 @@ switch im_filetype
                 for curr_load_frame_idx = 1:length(curr_load_frames)
                     curr_frame = curr_load_frames(curr_load_frame_idx);
                     im(:,:,curr_load_frame_idx) = ...
-                        dcimgmex('readframe', dcimg_fid, curr_frame-1)';
-                    disp(curr_frame)
+                        plab.wf.dcimgmex('readframe', dcimg_fid, curr_frame-1)';
                 end
 
                 % Loop through illumination colors
