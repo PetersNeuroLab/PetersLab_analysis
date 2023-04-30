@@ -88,7 +88,8 @@ for curr_process_files_idx = 1:length(process_files)
     %%%%% ALSO TEMPORARY: optionally enter number of frames per recording
     %%%%% as an input to preprocessing function 
     [U,Vrec,im_avg_color,frame_info] = plab.wf.preprocess_widefield_hamamatsu(curr_process_files,n_widefield_frames);
-
+    fclose all
+    close all
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     % TO DO - WHEN THINGS ARE BACK TO NORMAL:
@@ -96,23 +97,25 @@ for curr_process_files_idx = 1:length(process_files)
 
     %% Save preprocessed widefield data locally
 
+    local_save_path = fileparts(curr_process_files{1});
+
     % Assume 2 colors in order of blue/purple
     color_names = {'blue','violet'};
 
     % Save frame information in experiment folder
-    frame_info_fn = fullfile(curr_process_files,'widefield_frame_info');
+    frame_info_fn = fullfile(local_save_path,'widefield_frame_info');
     save(frame_info_fn,'frame_info','-v7.3');
 
     % Save mean images in experiment folder by color
     for curr_color = 1:length(color_names)
-        curr_mean_im_fn = fullfile(curr_process_files, ...
+        curr_mean_im_fn = fullfile(local_save_path, ...
             sprintf('meanImage_%s.npy',color_names{curr_color}));
         writeNPY(im_avg_color(:,:,curr_color),curr_mean_im_fn);
     end
 
     % Save spatial components in experiment (animal/day) folder by color
     for curr_color = 1:length(color_names)
-        curr_U_fn = fullfile(curr_process_files, ...
+        curr_U_fn = fullfile(local_save_path, ...
             sprintf('svdSpatialComponents_%s.npy',color_names{curr_color}));
         writeNPY(U{curr_color},curr_U_fn);
     end
@@ -121,7 +124,7 @@ for curr_process_files_idx = 1:length(process_files)
     for curr_recording = 1:size(Vrec,1)
         for curr_color = 1:length(color_names)
             % Put V's into separate recording paths
-            curr_V_fn = fullfile(curr_process_files,sprintf('recording_%d',curr_recording), ...
+            curr_V_fn = fullfile(local_save_path,sprintf('recording_%d',curr_recording), ...
                 sprintf('svdTemporalComponents_%s.npy',color_names{curr_color}));
             % Make recording path
             mkdir(fileparts(curr_V_fn));
@@ -138,7 +141,7 @@ for curr_process_files_idx = 1:length(process_files)
     end
 
     % Move local data to server:
-    local_data_dir = dir(curr_process_files);
+    local_data_dir = dir(local_save_path);
 
     % Move day-relevant files to day folder
     disp('Moving widefield files to server...')
@@ -179,7 +182,7 @@ for curr_process_files_idx = 1:length(process_files)
     % NOTE: THIS DOESN'T WORK! THE TIMESTAMPS ON THE VIDEOS ARE TOTALLY OFF
     % FROM THE PROTOCOL TIMES?? E.G. A VIDEO OFTEN STARTS AFTER THE
     % TIMESTAMP FOR THE NEXT PROTOCOL, SO THE TIMESTAMP IS IMPOSSIBLE
-    curr_server_path = strrep(fileparts(curr_process_files), ...
+    curr_server_path = strrep(fileparts(local_save_path), ...
         plab.locations.local_data_path,plab.locations.server_data_path);
     curr_server_dir = dir(curr_server_path);
     [protocol_paths,protocol_regexp] = regexp({curr_server_dir.name},'Protocol_(\d*)','match','tokens');
