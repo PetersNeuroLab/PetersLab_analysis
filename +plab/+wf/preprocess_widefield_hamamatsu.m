@@ -165,6 +165,7 @@ switch im_filetype
         for curr_im_idx = 1:length(im_files)
             dcimg_fid = plab.wf.dcimgmex('open', im_files{curr_im_idx});
             im_file_nframes(curr_im_idx) = plab.wf.dcimgmex( 'getparam', dcimg_fid, 'NUMBEROF_FRAME' );
+            plab.wf.dcimgmex('close', dcimg_fid)
         end
 
         if sum(im_file_nframes) ~= sum(n_widefield_frames)
@@ -172,8 +173,7 @@ switch im_filetype
         end
         
         % Set recording start frames from input
-%         recording_start_frame_idx = [1,n_widefield_frames(1:end-1)+1];
-        recording_start_frame_idx = [n_widefield_frames(1:end-1)+1];
+        recording_start_frame_idx = [1,n_widefield_frames(1:end-1)+1];
 
         % Get frame color
         frame_info = struct('frame_num',cell(length(im_file_nframes),1));
@@ -216,6 +216,7 @@ switch im_filetype
         im_width = plab.wf.dcimgmex( 'getparam', dcimg_fid, 'IMAGE_WIDTH' );
         im_height = plab.wf.dcimgmex( 'getparam', dcimg_fid, 'IMAGE_HEIGHT' );
         im_size = [im_height,im_width];
+        plab.wf.dcimgmex('close', dcimg_fid)
 end
 
 %% Create moving- and total-average images
@@ -313,6 +314,10 @@ switch im_filetype
                 fprintf('Frame chunk: %d/%d\n', ...
                     curr_frame_chunk,max(unique(frame_chunks{curr_im_idx})));
             end
+
+            % Close file
+            plab.wf.dcimgmex('close', dcimg_fid)
+
         end
 end
 
@@ -395,6 +400,10 @@ switch im_filetype
                 fprintf('Frame chunk: %d/%d\n', ...
                     curr_frame_chunk,max(unique(frame_chunks{curr_im_idx})));
             end
+
+            % Close file
+            plab.wf.dcimgmex('close', dcimg_fid)
+            
         end
 
 end

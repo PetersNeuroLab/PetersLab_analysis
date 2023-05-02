@@ -49,8 +49,6 @@ end
 
 for curr_process_files_idx = 1:length(process_files)
 
-    preload_vars = who;
-
     curr_process_files = process_files{curr_process_files_idx};
     fprintf('Preprocessing: [%s] \n',cell2mat(join(curr_process_files,', ')));
 
@@ -241,9 +239,6 @@ for curr_process_files_idx = 1:length(process_files)
             end
         end
     end
-
-    % Clean workspace for next loop
-    clearvars('-except',preload_vars{:});
 
     disp('Finished.');
 
