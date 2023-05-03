@@ -170,9 +170,11 @@ switch im_filetype
 
         %%%%%%%%%%%%%%% VERY TEMPORARY
         if sum(n_frames_rec) > sum(im_file_nframes)
-            error('Widefield preprocessing: more frames timelite than image')
+            % More timelite franes than image frames
+            n_frames_rec(1) = n_frames_rec(1) + ...
+                (sum(n_frames_rec) - sum(im_file_nframes));
         elseif sum(im_file_nframes) < sum(n_frames_rec)
-            error('Widefield preprocessing: more frames image than timelite')
+            error('Widefield preprocessing: mismatch n frames in files and timelites')
         end
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         

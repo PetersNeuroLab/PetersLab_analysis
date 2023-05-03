@@ -68,7 +68,7 @@ for curr_process_files_idx = 1:length(process_files)
         fullfile(day_path,protocol_path,'timelite.mat'), ...
         {curr_protocol_paths.folder},{curr_protocol_paths.name},'uni',false);
 
-    n_widefield_frames = nan(length(curr_timelite_filenames),1);
+    n_frames_tl = nan(length(curr_timelite_filenames),1);
     for curr_protocol = 1:length(curr_timelite_filenames)
 
         % Set level for TTL threshold
@@ -83,15 +83,15 @@ for curr_process_files_idx = 1:length(process_files)
         widefield_expose_times = timelite.timestamps(find(diff(widefield_thresh) == 1) + 1);
 
         % Store number of frames
-        n_widefield_frames(curr_protocol) = length(widefield_expose_times);
+        n_frames_tl(curr_protocol) = length(widefield_expose_times);
 
     end
     % (don't include protocols with 0 widefield frames)
-    n_widefield_frames(n_widefield_frames == 0) = [];
+    n_frames_tl(n_frames_tl == 0) = [];
 
     %%%%% ALSO TEMPORARY: optionally enter number of frames per recording
     %%%%% as an input to preprocessing function 
-    [U,Vrec,im_avg_color,frame_info] = plab.wf.preprocess_widefield_hamamatsu(curr_process_files,n_widefield_frames);
+    [U,Vrec,im_avg_color,frame_info] = plab.wf.preprocess_widefield_hamamatsu(curr_process_files,n_frames_tl);
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     % TO DO - WHEN THINGS ARE BACK TO NORMAL:
@@ -231,7 +231,7 @@ for curr_process_files_idx = 1:length(process_files)
     % Delete empty local folders
     % (2 hierarchy levels: day > animal)
     try
-        curr_hierarchy_path = curr_process_files;
+        curr_hierarchy_path = fileparts(curr_process_files);
         for hierarchy_levels = 1:3
             hierarchy_dir = dir(curr_hierarchy_path);
             if all(contains({hierarchy_dir.name},'.'))
