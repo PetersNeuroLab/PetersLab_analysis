@@ -168,15 +168,9 @@ switch im_filetype
             plab.wf.dcimgmex('close', dcimg_fid)
         end
 
-        %%%%%%%%%%%%%%% VERY TEMPORARY
-        if sum(n_frames_rec) > sum(im_file_nframes)
-            % More timelite franes than image frames
-            n_frames_rec(1) = n_frames_rec(1) + ...
-                (sum(n_frames_rec) - sum(im_file_nframes));
-        elseif sum(im_file_nframes) < sum(n_frames_rec)
-            error('Widefield preprocessing: mismatch n frames in files and timelites')
+        if sum(n_frames_rec) ~= sum(im_file_nframes)
+            warning('Widefield preprocessing: mismatched frames timelite vs images')
         end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
         % Set recording start frames from input
         recording_start_frame_idx = [1,n_frames_rec(1:end-1)+1];
@@ -205,7 +199,7 @@ end
 
 % If number of frames/recording is supplied, check that it matches total
 if n_frames ~= sum(n_frames_rec)
-    error('Widefield preprocessing: different total frames found vs given per recording')
+    warning('Widefield preprocessing: different total frames found vs given per recording')
 end
 
 
@@ -274,7 +268,7 @@ switch im_filetype
         % DCIMG: Load each file in chunks
         frame_chunk_n = n_frame_avg*1000;
         frame_chunks = cellfun(@(x,fileidx) fileidx + ceil((1:x)/frame_chunk_n), ...
-            num2cell(im_file_nframes),num2cell(0:length(im_file_nframes)-1),'uni',false);
+            num2cell(im_file_nframes),num2cell(0:length(im_file_nframes)-1)','uni',false);
 
         n_frame_chunks = max(frame_chunks{end});
 
@@ -436,7 +430,7 @@ if ~exist('n_widefield_frames','var') || isempty(n_frames_rec)
 
     end
 
-else
+elseif sum(n_widefield_frames) == sum(n_frames_rec)
     % If number of frames by recordings provided, use those
 
     % Store V's as recordings x color
