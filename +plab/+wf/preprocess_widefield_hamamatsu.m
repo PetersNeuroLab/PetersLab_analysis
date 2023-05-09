@@ -172,8 +172,9 @@ switch im_filetype
         if sum(n_frames_rec) > sum(im_file_nframes)
             n_frames_rec = im_file_nframes;
             warning('Widefield preprocessing: more frames timelite than image')
-        elseif sum(im_file_nframes) < sum(n_frames_rec)
-            error('Widefield preprocessing: more frames image than timelite')
+        elseif sum(n_frames_rec) < sum(im_file_nframes)
+            n_frames_rec = im_file_nframes;
+            warning('Widefield preprocessing: more frames image than timelite')
         end
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         

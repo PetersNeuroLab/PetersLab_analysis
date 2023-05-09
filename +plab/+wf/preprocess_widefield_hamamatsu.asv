@@ -168,12 +168,18 @@ switch im_filetype
             plab.wf.dcimgmex('close', dcimg_fid)
         end
 
-        if sum(n_frames_rec) ~= sum(im_file_nframes)
-            warning('Widefield preprocessing: mismatched frames timelite vs images')
+        %%%%%%%%%%%%%%% VERY TEMPORARY
+        if sum(n_frames_rec) > sum(im_file_nframes)
+            n_frames_rec = im_file_nframes;
+            warning('Widefield preprocessing: more frames timelite than image')
+        elseif sum(n_frames_rec) < sum(im_file_nframes)
+            n_frames_rec = im_file_nframes;
+            warning('Widefield preprocessing: more frames image than timelite')
         end
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
         % Set recording start frames from input
-        recording_start_frame_idx = [1,n_frames_rec(1:end-1)+1];
+        recording_start_frame_idx = [1,n_frames_rec+1];
 
         % Get frame color
         frame_info = struct('frame_num',cell(length(im_file_nframes),1));
@@ -199,7 +205,7 @@ end
 
 % If number of frames/recording is supplied, check that it matches total
 if n_frames ~= sum(n_frames_rec)
-    warning('Widefield preprocessing: different total frames found vs given per recording')
+    error('Widefield preprocessing: different total frames found vs given per recording')
 end
 
 
@@ -430,7 +436,7 @@ if ~exist('n_widefield_frames','var') || isempty(n_frames_rec)
 
     end
 
-elseif sum(n_widefield_frames) == sum(n_frames_rec)
+else
     % If number of frames by recordings provided, use those
 
     % Store V's as recordings x color
