@@ -171,10 +171,12 @@ switch im_filetype
         %%%%%%%%%%%%%%% VERY TEMPORARY
         if sum(n_frames_rec) > sum(im_file_nframes)
             n_frames_rec = im_file_nframes;
-            warning('Widefield preprocessing: more frames timelite than image')
+            warning('Widefield preprocessing: more frames timelite than image, using image frames')
         elseif sum(n_frames_rec) < sum(im_file_nframes)
-            n_frames_rec = im_file_nframes;
-            warning('Widefield preprocessing: more frames image than timelite')
+            % assume frames were cut off the first recording
+            n_frames_rec(1) = n_frames_rec(1) + ...
+                (sum(im_file_nframes) - sum(n_frames_rec));
+            warning('Widefield preprocessing: more frames image than timelite, adding frames to first recording')
         end
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
@@ -272,7 +274,7 @@ switch im_filetype
 
     case 'dcimg'
         % DCIMG: Load each file in chunks
-        frame_chunk_n = n_frame_avg*1000;
+        frame_chunk_n = n_frame_avg*500; % emprical: 1000 hits out of memory > 12 chunks
         frame_chunks = cellfun(@(x,fileidx) fileidx + ceil((1:x)/frame_chunk_n), ...
             num2cell(im_file_nframes),num2cell(0:length(im_file_nframes)-1)','uni',false);
 
