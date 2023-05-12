@@ -19,6 +19,10 @@ function [U,Vrec,im_avg,frame_info] = preprocess_widefield_hamamatsu(im_files,n_
 % im_avg: average raw image (by color)
 % frame_info: header information for each frame 
 
+%%%%%% TEMPORARY: big try/catch for debug
+
+try
+
 verbose = true; % Turn off messages by default
 
 %% Set maximum number of components to keep
@@ -181,7 +185,7 @@ switch im_filetype
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
         % Set recording start frames from input
-        recording_start_frame_idx = [1,n_frames_rec(1:end-1)+1];
+        recording_start_frame_idx = [1;n_frames_rec(1:end-1)+1];
 
         % Get frame color
         frame_info = struct('frame_num',cell(length(im_file_nframes),1));
@@ -273,10 +277,14 @@ switch im_filetype
         end
 
     case 'dcimg'
-        % DCIMG: Load each file in chunks
+        % DCIMG: Load each file in chunks 
+        % (index as cumulative chunks across files)
         frame_chunk_n = n_frame_avg*500; % emprical: 1000 hits out of memory > 12 chunks
-        frame_chunks = cellfun(@(x,fileidx) fileidx + ceil((1:x)/frame_chunk_n), ...
-            num2cell(im_file_nframes),num2cell(0:length(im_file_nframes)-1)','uni',false);
+        frame_chunks_file = cellfun(@(x) ceil((1:x)/frame_chunk_n), ...
+            num2cell(im_file_nframes),'uni',false);
+        frame_chunks = cellfun(@(chunk,cumulative_offset) ...
+            chunk+cumulative_offset,frame_chunks_file, ...
+            num2cell([0;cellfun(@max,frame_chunks_file(1:end-1))]),'uni',false);
 
         n_frame_chunks = max(frame_chunks{end});
 
@@ -312,6 +320,10 @@ switch im_filetype
 
                     % Get moving average (truncate based on moving avg modulus)
                     curr_n_frames = sum(curr_frame_color_idx);
+                    if curr_n_frames < n_frame_avg
+                        continue
+                    end
+
                     curr_frame_avg_idx = find(curr_frame_color_idx, ...
                         curr_n_frames - mod(curr_n_frames,n_frame_avg));
                     im_mov_avg{curr_frame_chunk,curr_color} = ...
@@ -378,7 +390,6 @@ switch im_filetype
 
     case 'dcimg'
         for curr_im_idx = 1:length(im_files)
-            curr_im_fn = im_files{curr_im_idx};
 
             % Open file for reading
             dcimg_fid = plab.wf.dcimgmex('open', im_files{curr_im_idx});
@@ -420,7 +431,7 @@ end
 
 if verbose; disp('Splitting SVD temporal components by recording...');end
 
-if ~exist('n_widefield_frames','var') || isempty(n_frames_rec)
+if ~exist('n_frames_rec','var') || isempty(n_frames_rec)
     % If number of frames by recordings not provided, get by timestamps
 
     % Store V's as recordings x color
@@ -461,7 +472,11 @@ end
 if verbose; disp('Finished SVD.'); end
 
 
+catch me
+    warning(me.identifier,'WF preprocessing debug: %s',me.message);
+    keyboard
 
+end
 
 
 
