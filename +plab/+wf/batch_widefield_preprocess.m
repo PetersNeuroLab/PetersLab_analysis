@@ -71,14 +71,18 @@ for curr_process_files_idx = 1:length(process_files)
             fullfile(day_path,protocol_path,'timelite.mat'), ...
             {curr_protocol_paths.folder},{curr_protocol_paths.name},'uni',false);
 
-        n_frames_tl = nan(length(curr_timelite_filenames),1);
+        n_frames_tl = zeros(length(curr_timelite_filenames),1);
         for curr_protocol = 1:length(curr_timelite_filenames)
 
             % Set level for TTL threshold
             ttl_thresh = 2;
 
             % Load timelite
-            timelite = load(curr_timelite_filenames{curr_protocol});
+            if exist(curr_timelite_filenames{curr_protocol},'file')
+                timelite = load(curr_timelite_filenames{curr_protocol});
+            else
+                continue
+            end
 
             % Widefield times
             widefield_idx = strcmp({timelite.daq_info.channel_name}, 'widefield_camera');
