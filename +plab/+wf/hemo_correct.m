@@ -14,7 +14,12 @@ function V_neuro_hemocorr = hemo_correct(U_neuro,V_neuro,t_neuro,U_hemo,V_hemo,t
 
 %% Set parameters
 
-px_downsample = 3;
+% Spatial downsample factor 
+% (pixel traces reconstructed at this scale, 5 seems fine)
+px_downsample = 5;
+
+% Frequency for filtering heartbeat
+% (5-15 is extremes, usually closer to 8-10)
 heartbeat_freq = [5,15];
 
 %% Get scale factor to match hemo onto neuro
@@ -75,6 +80,15 @@ V_neuro_hemocorr = V_neuro - neuro_hemo_estimation;
 
 
 %% Check results
+
+% % Image the V hemo scale
+% figure;
+% imagesc(reshape(hemo_scale_px_downsamp, ...
+%     size(U_neuro_downsamp,1),size(U_neuro_downsamp,2)));
+% clim(max(abs(clim)).*[-1,1]);
+% colormap(AP_colormap('BWR'));
+% colorbar;
+% axis image;
 
 % Plot spectrum of ROI trace (look for elimination of heartbeat freqs)
 % [neuro_trace,roi] = AP_svd_roi(U_neuro,V_neuro,U_neuro(:,:,1));
