@@ -19,6 +19,38 @@ function [U,Vrec,im_avg,frame_info] = preprocess_widefield_hamamatsu(im_files,n_
 % im_avg: average raw image (by color)
 % frame_info: header information for each frame 
 
+%%%%%%%%%%%%%     TEMPORARY: getting bin files working
+data_fn = "D:\LocalData\test\2023-06-01\widefield\widefield_1632_data.bin";
+metadata_fn = "D:\LocalData\test\2023-06-01\widefield\widefield_1632_metadata.bin";
+
+data_fid = fopen(data_fn,'r');
+metadata_fid = fopen(metadata_fn,'r');
+
+% Load metadata
+% Metadata format: [image height, image width, frame number, timestamp
+% (year,month,day,hour,minute,second)]
+
+% Get frame size
+widefield_metadata = reshape(fread(metadata_fid,'double'),9,[]);
+if length(unique(widefield_metadata(1:2,:))) ~= 2
+    error('Widefield: not uniform image size')
+end
+im_size = widefield_metadata(1:2,1);
+
+% Check frames are continuous
+if any(diff(widefield_metadata(3,:) ~= 1))
+    error('Widfield: frames not continuous');
+end
+
+% Get timestamp, convert to matlab format
+frame_timestamps = datetime( ...
+    widefield_metadata(4,:),widefield_metadata(5,:),widefield_metadata(6,:), ...
+    widefield_metadata(7,:),widefield_metadata(8,:),widefield_metadata(9,:));
+
+
+%%%%%%%%%%%%%%%%%
+
+
 %%%%%% TEMPORARY: big try/catch for debug
 
 try

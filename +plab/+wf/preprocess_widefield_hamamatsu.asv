@@ -19,6 +19,25 @@ function [U,Vrec,im_avg,frame_info] = preprocess_widefield_hamamatsu(im_files,n_
 % im_avg: average raw image (by color)
 % frame_info: header information for each frame 
 
+%%%%%%%%%%%%%     TEMPORARY: getting bin files working
+data_fn = "D:\LocalData\test\2023-06-01\widefield\widefield_1632_data.bin";
+metadata_fn = "D:\LocalData\test\2023-06-01\widefield\widefield_1632_metadata.bin";
+
+data_fid = fopen(data_fn,'r');
+metadata_fid = fopen(metadata_fn,'r');
+
+% Metadata format: [image height, image width, frame number, timestamp
+% (year,month,day,hour,minute,second)]
+widefield_metadata = reshape(fread(metadata_fid,'double'),9,[]);
+
+im_size = unique(widefield_metadata(1:2,:));
+if length(im_size) ~= 2
+    error('Widefield: not uniform image size')
+end
+
+%%%%%%%%%%%%%%%%%
+
+
 %%%%%% TEMPORARY: big try/catch for debug
 
 try
@@ -277,10 +296,14 @@ switch im_filetype
         end
 
     case 'dcimg'
-        % DCIMG: Load each file in chunks
+        % DCIMG: Load each file in chunks 
+        % (index as cumulative chunks across files)
         frame_chunk_n = n_frame_avg*500; % emprical: 1000 hits out of memory > 12 chunks
-        frame_chunks = cellfun(@(x) ceil((1:x)/frame_chunk_n), ...
+        frame_chunks_file = cellfun(@(x) ceil((1:x)/frame_chunk_n), ...
             num2cell(im_file_nframes),'uni',false);
+        frame_chunks = cellfun(@(chunk,cumulative_offset) ...
+            chunk+cumulative_offset,frame_chunks_file, ...
+            num2cell([0;cellfun(@max,frame_chunks_file(1:end-1))]),'uni',false);
 
         n_frame_chunks = max(frame_chunks{end});
 

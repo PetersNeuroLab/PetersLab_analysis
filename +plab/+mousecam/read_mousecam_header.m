@@ -62,11 +62,11 @@ seconds = (bin2dec(timestamp_bin_val(:,1:7)))';
 % get total in seconds
 seconds = seconds + miliseconds;
 
-% make sure the seconds trace is continuous - it resets at 127
+% if multiple frames - make cumulatively continuous (resets every 127s)
 reset_counter_idx = find(diff([0 seconds])<0);
 for i=1:length(reset_counter_idx)
     seconds(reset_counter_idx(i):end) = seconds(reset_counter_idx(i):end) + 128;
-end % can replace this with a recursive function??? 
+end
 
 % report timestamp in seconds
 mousecam_header.timestamps = seconds';
