@@ -47,7 +47,7 @@ for curr_process_path_cell = process_paths
         fprintf('Preprocessing: %s \n',curr_process_path);
 
         %% SVD decomposition of widefield data
-        [U,V,im_avg_color] = plab.wf.preprocess_widefield(curr_process_path);
+        [U,V,im_avg_color] = plab.wf.preprocess_widefield_hamamatsu(curr_process_path);
 
         %% Save preprocessed widefield data locally
 
@@ -141,15 +141,72 @@ for curr_process_path_cell = process_paths
                 animal_day{1},animal_day{2},rec_time,'widefield');
 
             % Make server path (if it doesn't exist) and move
-            if ~exist(fileparts(curr_server_path),'dir')
-                mkdir(fileparts(curr_server_path));
+            if ~exist(fileparts(curr_server_filename),'dir')
+                mkdir(fileparts(curr_server_filename));
             end
 
-            [status,message] = movefile(curr_local_path,curr_server_path);
+            [status,message] = movefile(curr_local_filename,curr_server_filename);
             if ~status
                 warning('Failed moving to server: %s',message);
             else
-                fprintf('Moved %s --> %s \n',curr_local_path,curr_server_path);
+                fprintf('Moved %s --> %s \n',curr_local_filename,curr_server_filename);
+            end
+
+        end
+
+
+
+
+        %%% TEMPORARY: JUST ASSUME PROTOCOLS ARE IN ORDER OF RECORDINGS
+        %     % Get timestamp of first frame in each recording
+        %     [~,recording_start_frame] = unique([frame_info.rec_idx]);
+        %     frame_timestamp_cat = [frame_info.timestamp];
+        %     recording_start_times = str2num(char(frame_timestamp_cat(recording_start_frame),'HHmm'));
+
+        % Get Protocol folder with closest previous time for each recording
+        % NOTE: THIS DOESN'T WORK! THE TIMESTAMPS ON THE VIDEOS ARE TOTALLY OFF
+        % FROM THE PROTOCOL TIMES?? E.G. A VIDEO OFTEN STARTS AFTER THE
+        % TIMESTAMP FOR THE NEXT PROTOCOL, SO THE TIMESTAMP IS IMPOSSIBLE
+        curr_server_path = strrep(fileparts(local_save_path), ...
+            plab.locations.local_data_path,plab.locations.server_data_path);
+        curr_server_dir = dir(curr_server_path);
+        [protocol_paths,protocol_regexp] = regexp({curr_server_dir.name},'Protocol_(\d*)','match','tokens');
+        protocol_paths_cat = horzcat(protocol_paths{:});
+        protocol_regexp_cat = cellfun(@(x) horzcat(x{:}),protocol_regexp,'uni',false);
+        curr_server_protocol_times = cellfun(@str2num,horzcat(protocol_regexp_cat{:}));
+
+        %     recording_protocol_idx = arrayfun(@(x) ...
+        %         find(recording_start_times(x) - curr_server_protocol_times > 0,1,'last'), ...
+        %         1:length(recording_start_times));
+        recording_protocol_idx = 1:length(curr_server_protocol_times);
+
+        % (sanity check: there should be no overlapping protocol indices)
+        if length(unique(recording_protocol_idx)) ~= length(recording_protocol_idx)
+            error('Widefield recordings have overlapping protocol folders')
+        end
+
+        for curr_recording_idx = 1:length(recording_protocol_idx)
+
+            % Local path
+            curr_dir_idx = local_data_protocolfiles_idx(curr_recording_idx);
+            curr_local_filename = fullfile(local_data_dir(curr_dir_idx).folder, ...
+                local_data_dir(curr_dir_idx).name);
+
+            % Server path:
+            curr_server_filename = fullfile(curr_server_path, ...
+                protocol_paths_cat{recording_protocol_idx(curr_recording_idx)}, ...
+                'widefield');
+
+            % Make server path (if it doesn't exist) and move
+            if ~exist(fileparts(curr_server_filename),'dir')
+                mkdir(fileparts(curr_server_filename));
+            end
+
+            [status,message] = movefile(curr_local_filename,curr_server_filename);
+            if ~status
+                warning('Failed moving to server: %s',message);
+            else
+                fprintf('Moved %s --> %s \n',curr_local_filename,curr_server_filename);
             end
 
         end
@@ -157,7 +214,7 @@ for curr_process_path_cell = process_paths
         % Delete empty local folders
         % (2 hierarchy levels: day > animal)
         try
-            curr_hierarchy_path = curr_process_path;
+            curr_hierarchy_path = fileparts(curr_process_files);
             for hierarchy_levels = 1:3
                 hierarchy_dir = dir(curr_hierarchy_path);
                 if all(contains({hierarchy_dir.name},'.'))
