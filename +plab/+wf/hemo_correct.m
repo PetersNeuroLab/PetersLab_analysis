@@ -22,61 +22,68 @@ px_downsample = 5;
 % (5-15 is extremes, usually closer to 8-10)
 heartbeat_freq = [5,15];
 
+%% Convert hemo to neuro format
+
+% Interpolate hemo to neuro timepoints (captured alternating)
+% (extrapolate last point if not paired)
+V_hemo_tn = interp1(t_hemo,V_hemo',t_neuro,'linear','extrap')';
+
+% Convert hemo basis set to neuro basis set
+V_hemo_tn_Un = ...
+    reshape(U_neuro,[],size(U_neuro,3))' * ...
+    reshape(U_hemo,[],size(U_hemo,3)) * ...
+    V_hemo_tn;
+
+
 %% Get scale factor to match hemo onto neuro
 % (using the heartbeat frequency)
 
-% Interpolate V hemo timestamps into neuro timestamps
-% (to estimate simultaneous from alternating measures)
-% (extrapolate last point if unpaired)
-V_hemo_tn = interp1(t_hemo,V_hemo',t_neuro,'linear','extrap')';
+% Pick frames to use (not edges: artifacts)
+skip_frames_scale = 500;
+use_frames_scale = skip_frames_scale:size(V_neuro,2)-skip_frames_scale;
 
 % Downsample U
-U_neuro_downsamp = imresize(U_neuro,1/px_downsample,'bilinear');
-U_hemo_downsamp = imresize(U_hemo,1/px_downsample,'bilinear');
+U_neuro_downsamp = imresize(U_neuro,1/px_downsample,'nearest');
 
-% Get all pixel traces (t x px) from downsampled U
-px_neuro = reshape(plab.wf.svd2px(U_neuro_downsamp,V_neuro),[],size(V_neuro,2))';
-px_hemo = reshape(plab.wf.svd2px(U_hemo_downsamp,V_hemo_tn),[],size(V_hemo_tn,2))';
+% Get pixel traces (t x px) from downsampled U
+px_neuro = reshape(plab.wf.svd2px(U_neuro_downsamp, ...
+    V_neuro(:,use_frames_scale)),[],length(use_frames_scale))';
+px_hemo_Un = reshape(plab.wf.svd2px(U_neuro_downsamp, ...
+    V_hemo_tn_Un(:,use_frames_scale)),[],length(use_frames_scale))';
 
 % Filter both colors at heartbeat frequency, subtract mean
 neuro_framerate = 1/mean(diff(t_neuro));
 [b,a] = butter(2,heartbeat_freq/(neuro_framerate/2));
-px_neuro_heartbeat = filter(b,a,px_neuro);
-px_hemo_heartbeat = filter(b,a,px_hemo);
+px_neuro_heartbeat = filter(b,a,px_neuro-nanmean(px_neuro,1));
+px_hemo_Un_heartbeat = filter(b,a,px_hemo_Un-nanmean(px_hemo_Un,1));
 
-% Get scaling of violet to blue from heartbeat (don't use trace edges)
-skip_frames_scale = 500;
-use_frames_scale = skip_frames_scale:size(px_neuro_heartbeat,1)-skip_frames_scale;
+% Get scaling of violet to blue from heartbeat
 % scaling = cov(neuro-mean,hemo-mean)/var(hemo-mean)
-hemo_scale_px_downsamp = sum(...
-    detrend(px_neuro_heartbeat(use_frames_scale,:),'constant').*...
-    detrend(px_hemo_heartbeat(use_frames_scale,:),'constant'))./ ...
-    sum(detrend(px_hemo_heartbeat(use_frames_scale,:),'constant').^2);
+hemo_scale_px_downsamp = sum(px_neuro_heartbeat.*px_hemo_Un_heartbeat)./ ...
+    sum(px_hemo_Un_heartbeat.^2);
 
 % Get transform matrix to convert scaling from pixel-space to V-space
-hemo_scale_V_tform = pinv(reshape(U_neuro_downsamp,[],size(U_neuro_downsamp,3)))* ...
+hemo_scale_V_tform = ...
+    pinv(reshape(U_neuro_downsamp,[],size(U_neuro_downsamp,3)))* ...
     diag(hemo_scale_px_downsamp)* ...
     reshape(U_neuro_downsamp,[],size(U_neuro_downsamp,3));
 
 %% Hemo-correct neuro signal
 
 % Estimate hemo signal in neuro:
-% 1) convert V hemo basis set (U_hemo) into the neuro basis set (U_neuro)
-V_hemo_tn_Un = ...
-    reshape(U_neuro,[],size(U_neuro,3))' * ...
-    reshape(U_hemo,[],size(U_hemo,3)) * ...
-    V_hemo_tn;
 
-% 2) get hemo baseline (moving mean)
-baseline_minutes = 2; % number of minutes for moving-mean baseline
+% 1) get hemo baseline (moving mean)
+baseline_minutes = 5; % number of minutes for moving-mean baseline
 movmed_n = neuro_framerate*60*baseline_minutes;
+
+neuro_movmean = movmean(V_neuro,movmed_n,2);
 hemo_movmean = movmean(V_hemo_tn_Un,movmed_n,2);
 
-% 3) baseline-subtract and scale neuro-basis set hemo signal
+% 2) baseline-subtract and scale neuro-basis set hemo signal
 neuro_hemo_estimation = transpose((V_hemo_tn_Un - hemo_movmean)'*hemo_scale_V_tform');
 
 % Hemo-correct neuro: subtract hemo estimation from neuro signal
-V_neuro_hemocorr = V_neuro - neuro_hemo_estimation;
+V_neuro_hemocorr = (V_neuro-neuro_movmean) - neuro_hemo_estimation;
 
 
 %% Check results
@@ -89,31 +96,40 @@ V_neuro_hemocorr = V_neuro - neuro_hemo_estimation;
 % colormap(AP_colormap('BWR'));
 % colorbar;
 % axis image;
-
-% Plot spectrum of ROI trace (look for elimination of heartbeat freqs)
-% [neuro_trace,roi] = AP_svd_roi(U_neuro,V_neuro,U_neuro(:,:,1));
-% neuro_hemocorr_trace = AP_svd_roi(U_neuro,V_neuro_hemocorr,[],[],roi);
+% title('Hemo to neuro scale factor');
+% 
+% % Plot spectrum of ROI trace (look for elimination of heartbeat freqs)
+% [neuro_trace,roi] = AP_svd_roi(U_neuro,V_neuro(:,use_frames_scale),U_neuro(:,:,1));
+% hemo_trace = AP_svd_roi(U_hemo,V_hemo(:,use_frames_scale),[],[],roi);
+% neuro_hemo_estimation_trace = AP_svd_roi(U_neuro,neuro_hemo_estimation(:,use_frames_scale),[],[],roi);
+% neuro_hemocorr_trace = AP_svd_roi(U_neuro,V_neuro_hemocorr(:,use_frames_scale),[],[],roi);
 % 
 % Fs = neuro_framerate;
 % L = length(neuro_trace);
 % NFFT = 2^nextpow2(L);
 % 
 % [neuro_trace_spectrum,F] = pwelch(double(neuro_trace)',[],[],NFFT,Fs);
+% [hemo_trace_spectrum,F] = pwelch(double(hemo_trace)',[],[],NFFT,Fs);
+% [neuro_hemo_estimation_spectrum,F] = pwelch(double(neuro_hemo_estimation_trace)',[],[],NFFT,Fs);
 % [neuro_hemocorr_trace_spectrum,F] = pwelch(double(neuro_hemocorr_trace)',[],[],NFFT,Fs);
 % 
-% figure; subplot(1,2,1); hold on;
+% figure; subplot(2,1,1); hold on;
 % plot(neuro_trace,'b');
-% plot(neuro_hemocorr_trace,'color',[0.8,0,0]);
+% plot(hemo_trace,'color',[0.8,0,0]);
+% plot(neuro_hemo_estimation_trace,'color',[0.8,0.8,0]);
+% plot(neuro_hemocorr_trace,'color',[0,0.8,0]);
 % 
-% subplot(1,2,2); hold on;
+% subplot(2,1,2); hold on;
 % plot(F,log10(smooth(neuro_trace_spectrum,50)),'b');
-% plot(F,log10(smooth(neuro_hemocorr_trace_spectrum,50)),'color',[0.8,0,0]);
+% plot(F,log10(smooth(hemo_trace_spectrum,50)),'color',[0.8,0,0]);
+% plot(F,log10(smooth(neuro_hemo_estimation_spectrum,50)),'color',[0.8,0.8,0]);
+% plot(F,log10(smooth(neuro_hemocorr_trace_spectrum,50)),'color',[0,0.8,0]);
 % 
 % xlabel('Frequency');
 % ylabel('Log Power');
 % xline(heartbeat_freq,'linewidth',2,'color','r');
 % 
-% legend({'Neuro','Neuro hemocorr','Heart Freq'})
+% legend({'Neuro','Hemo','Neuro hemo estimation','Neuro hemocorr','Heart Freq'})
 
 
 
