@@ -1,6 +1,13 @@
 # Analysis
 Code for common analysis
 
+## Create/find path locations
+`plab.locations.(location)`
+- `server_data_path`: server location
+- ports/local workflow/github: used in rigging code
+
+`plab.locations.make_server_filename(animal,rec_day,rec_time,filepart1,...,filepartN)`: construct lab filename
+
 ## Finding recordings
 `plab.find_recordings(animal,day,workflow)`: find recordings (specific or general) and recording modalities
 
