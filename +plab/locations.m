@@ -11,7 +11,7 @@ classdef locations
 
         % NAS server location
         server_path = 'P:\';
-        server_data_path = fullfile(server_path,'Data');
+        server_data_path = fullfile(plab.locations.server_path,'Data');
 
         % Ports for tcp servers and clients
         bonsai_port = 50001
