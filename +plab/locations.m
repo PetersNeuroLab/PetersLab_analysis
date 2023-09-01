@@ -56,34 +56,40 @@ classdef locations
             % Generate local filename
             % local_filename = make_local_filename(animal,rec_day,rec_time,filepart1,...,filepartN)
 
-            % Format components
-            if nargin == 2 || isempty(rec_time)
-                filename_components = [{plab.locations.local_data_path, ...
-                    animal,rec_day},varargin];
+            % Format recording time path
+            if exist('rec_time','var') && ~isempty(rec_time)
+                rec_time_path = sprintf('Recording_%s',rec_time);
             else
-                filename_components = [{plab.locations.local_data_path, ...
-                    animal,rec_day,sprintf('Recording_%s',rec_time)},varargin];
+                rec_time_path = [];
             end
 
+            filename_components = [{plab.locations.local_data_path, ...
+                    animal,rec_day,rec_time_path},varargin];
+            filename_components_filled = filename_components(cellfun(@(x) ...
+                ~isempty(x),filename_components));
+
             % Ensure uniform char type, format as path
-            local_filename = cell2mat(join(convertContainedStringsToChars(filename_components),filesep));
+            local_filename = cell2mat(join(convertContainedStringsToChars(filename_components_filled),filesep));
 
         end
         function server_filename = make_server_filename(animal,rec_day,rec_time,varargin)
             % Generate server filename
             % server_filename = make_server_filename(animal,rec_day,rec_time,filepart1,...,filepartN)
 
-            % Format components
-            if nargin == 2 || isempty(rec_time)
-                filename_components = [{plab.locations.server_data_path, ...
-                    animal,rec_day},varargin];
+            % Format recording time path
+            if exist('rec_time','var') && ~isempty(rec_time)
+                rec_time_path = sprintf('Recording_%s',rec_time);
             else
-                filename_components = [{plab.locations.server_data_path, ...
-                    animal,rec_day,sprintf('Recording_%s',rec_time)},varargin];
+                rec_time_path = [];
             end
 
+            filename_components = [{plab.locations.server_data_path, ...
+                    animal,rec_day,rec_time_path},varargin];
+            filename_components_filled = filename_components(cellfun(@(x) ...
+                ~isempty(x),filename_components));
+
             % Ensure uniform char type, format as path
-            server_filename = cell2mat(join(convertContainedStringsToChars(filename_components),filesep));
+            server_filename = cell2mat(join(convertContainedStringsToChars(filename_components_filled),filesep));
 
         end
 
