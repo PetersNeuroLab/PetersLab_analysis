@@ -48,37 +48,22 @@ classdef locations
 
         %% Methods to construct filenames
         % Filename structure:
-        % storage\animal\<YYYY-MM-DD>\<Protocol_HHMM>\filepart1\...\filepartN
+        % drive\animal\<YYYY-MM-DD>\<Protocol_HHMM>\filepart1\...\filepartN
         % e.g. P:\AP001\2023-03-21\Protocol_1301\timelite.mat
         %      P:\AP001\2023-03-21\Protocol_1301\widefield\svdSpatialComponents_blue.npy
 
-        function local_filename = make_local_filename(animal,rec_day,rec_time,varargin)
-            % Generate local filename
-            % local_filename = make_local_filename(animal,rec_day,rec_time,filepart1,...,filepartN)
-
-            if ~exist('rec_day','var')
-                rec_day = [];
-            end
-
-            % Format recording time path
-            if exist('rec_time','var') && ~isempty(rec_time)
-                rec_time_path = sprintf('Recording_%s',rec_time);
-            else
-                rec_time_path = [];
-            end
-
-            filename_components = [{plab.locations.local_data_path, ...
-                    animal,rec_day,rec_time_path},varargin];
-            filename_components_filled = filename_components(cellfun(@(x) ...
-                ~isempty(x),filename_components));
-
-            % Ensure uniform char type, format as path
-            local_filename = cell2mat(join(convertContainedStringsToChars(filename_components_filled),filesep));
-
-        end
-        function server_filename = make_server_filename(animal,rec_day,rec_time,varargin)
+        function generated_filename = filename(drive,animal,rec_day,rec_time,varargin)
             % Generate server filename
-            % server_filename = make_server_filename(animal,rec_day,rec_time,filepart1,...,filepartN)
+            % generated_filename = filename('server | local',animal,rec_day,rec_time,varargin)
+
+            switch drive
+                case 'server'
+                    use_drive = plab.locations.server_data_path;
+                case 'local'
+                    use_drive = plab.locations.local_data_path;
+                otherwise
+                    error('Filename drive option invalid: "%s"',drive)
+            end
 
             if ~exist('rec_day','var')
                 rec_day = [];
@@ -91,16 +76,14 @@ classdef locations
                 rec_time_path = [];
             end
 
-            filename_components = [{plab.locations.server_data_path, ...
-                    animal,rec_day,rec_time_path},varargin];
-            filename_components_filled = filename_components(cellfun(@(x) ...
-                ~isempty(x),filename_components));
+            filename_components = [{use_drive,animal,rec_day,rec_time_path},varargin];
+            filename_components_filled = ...
+                filename_components(cellfun(@(x) ~isempty(x),filename_components));
 
             % Ensure uniform char type, format as path
-            server_filename = cell2mat(join(convertContainedStringsToChars(filename_components_filled),filesep));
+            generated_filename = cell2mat(join(convertContainedStringsToChars(filename_components_filled),filesep));
 
         end
-
 
     end
 
