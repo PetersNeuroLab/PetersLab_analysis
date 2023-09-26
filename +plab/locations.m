@@ -46,7 +46,7 @@ classdef locations
         end
 
 
-        %% Methods to construct filenames
+        %% Methods to generate filenames
         % Filename structure:
         % drive\animal\<YYYY-MM-DD>\<Protocol_HHMM>\filepart1\...\filepartN
         % e.g. P:\AP001\2023-03-21\Protocol_1301\timelite.mat
