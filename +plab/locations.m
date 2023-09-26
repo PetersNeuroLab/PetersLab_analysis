@@ -56,6 +56,10 @@ classdef locations
             % Generate local filename
             % local_filename = make_local_filename(animal,rec_day,rec_time,filepart1,...,filepartN)
 
+            if ~exist('rec_day','var')
+                rec_day = [];
+            end
+
             % Format recording time path
             if exist('rec_time','var') && ~isempty(rec_time)
                 rec_time_path = sprintf('Recording_%s',rec_time);
@@ -75,6 +79,10 @@ classdef locations
         function server_filename = make_server_filename(animal,rec_day,rec_time,varargin)
             % Generate server filename
             % server_filename = make_server_filename(animal,rec_day,rec_time,filepart1,...,filepartN)
+
+            if ~exist('rec_day','var')
+                rec_day = [];
+            end
 
             % Format recording time path
             if exist('rec_time','var') && ~isempty(rec_time)
