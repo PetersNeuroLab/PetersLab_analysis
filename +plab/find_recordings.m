@@ -73,7 +73,7 @@ if ~isempty(recording_day)
     for curr_day_idx = 1:length(recording_day)
         curr_day = recording_day{curr_day_idx};
 
-        curr_day_path = plab.locations.make_server_filename(animal,curr_day);
+        curr_day_path = plab.locations.filename('server',animal,curr_day);
 
         % Get recording folders within day
         curr_recording_paths = dir(fullfile(curr_day_path,'Recording*'));
