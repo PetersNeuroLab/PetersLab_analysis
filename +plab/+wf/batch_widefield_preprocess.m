@@ -137,7 +137,7 @@ for curr_process_path_cell = process_paths
             rec_time = local_data_dir(curr_recording_idx).name;
 
             % Server path
-            curr_server_path = plab.locations.make_server_filename( ...
+            curr_server_path = plab.locations.filename('server', ...
                 animal_day{1},animal_day{2},rec_time,'widefield');
 
             % Make server path (if it doesn't exist) and move
