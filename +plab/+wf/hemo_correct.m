@@ -103,7 +103,7 @@ V_neuro_hemocorr = V_neuro_th - neuro_hemo_estimation;
 
 %% Check results
 
-check_results = true;
+check_results = false;
 
 if check_results
 
