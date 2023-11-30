@@ -10,7 +10,7 @@ function [V_neuro_hemocorr,hemocorr_t] = hemo_correct(U_neuro,V_neuro,t_neuro,U_
 % into neuro U-space, baseline-subtracts and scales hemo signal, subtracts
 % neuro-estimated hemo signal from neuro signal.
 %
-% Function based off one written by Kenneth Harris (hemo_correct_local)
+% Function based off cortexlab/widefield/hemo_correct_local (Kenneth)
 
 %% Set parameters
 
