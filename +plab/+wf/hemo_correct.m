@@ -54,8 +54,8 @@ px_hemo_Un = reshape(plab.wf.svd2px(U_neuro_downsamp, ...
     V_hemo_Un(:,use_frames)),[],length(use_frames))';
 
 % Filter both colors at heartbeat frequency, subtract mean
-widefield_framerate = 1/mean(diff(t_neuro));
-[b,a] = butter(2,heartbeat_freq/(widefield_framerate/2));
+wf_framerate = 1/mean(diff(t_neuro));
+[b,a] = butter(2,heartbeat_freq/(wf_framerate/2));
 px_neuro_heartbeat = filter(b,a,px_neuro-nanmean(px_neuro,1));
 px_hemo_heartbeat = filter(b,a,px_hemo_Un-nanmean(px_hemo_Un,1));
 
@@ -125,7 +125,7 @@ if check_results
     neuro_hemo_estimation_trace = AP_svd_roi(U_neuro,neuro_hemo_estimation(:,use_frames),[],[],roi);
     neuro_hemocorr_trace = AP_svd_roi(U_neuro,V_neuro_hemocorr(:,use_frames),[],[],roi);
 
-    Fs = widefield_framerate;
+    Fs = wf_framerate;
     L = length(neuro_trace);
     NFFT = 2^nextpow2(L);
 
@@ -155,10 +155,10 @@ if check_results
     % Hemo spectrogram
     spect_overlap = 50;
     window_length = 5; % in seconds
-    window_length_samples = round(window_length/(1/widefield_framerate));
+    window_length_samples = round(window_length/(1/wf_framerate));
     figure;
     spectrogram(hemo_trace,window_length_samples, ...
-        round(spect_overlap/100*window_length_samples),[],widefield_framerate,'yaxis')
+        round(spect_overlap/100*window_length_samples),[],wf_framerate,'yaxis')
     colormap(hot)
     set(gca,'colorscale','log')
     title('Hemo spectrogram')
