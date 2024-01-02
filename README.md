@@ -6,7 +6,7 @@ Code for common analysis
 - `server_data_path`: server location
 - ports/local workflow/github: used in rigging code
 
-`plab.locations.make_server_filename(animal,rec_day,rec_time,filepart1,...,filepartN)`: construct lab filename
+`plab.locations.filename(drive,animal,rec_day,rec_time,filepart1,...,filepartN)`: construct lab filename
 
 ## Finding recordings
 `plab.find_recordings(animal,day,workflow)`: find recordings (specific or general) and recording modalities
