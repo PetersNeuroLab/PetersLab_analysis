@@ -1,16 +1,12 @@
 % Definitions for shared locations across the lab
 
-% TO DO:
-% Add method to search for filename? like AP_cortexlab filename
-% maybe also something like AP_find_experiments
-
 classdef locations
     properties(Constant = true)
 
         %% Set common lab locations
 
         % NAS server location
-        server_path = 'P:\';
+        server_path = '\\qnap-ap001.dpag.ox.ac.uk\APlab\';
         server_data_path = fullfile(plab.locations.server_path,'Data');
 
         % Ports for tcp servers and clients
@@ -46,15 +42,15 @@ classdef locations
         end
 
 
-        %% Methods to generate filenames
+        %% Methods to construct filenames
         % Filename structure:
         % drive\animal\<YYYY-MM-DD>\<Protocol_HHMM>\filepart1\...\filepartN
         % e.g. P:\AP001\2023-03-21\Protocol_1301\timelite.mat
         %      P:\AP001\2023-03-21\Protocol_1301\widefield\svdSpatialComponents_blue.npy
 
-        function generated_filename = filename(drive,animal,rec_day,rec_time,varargin)
-            % Generate server filename
-            % generated_filename = filename('server | local',animal,rec_day,rec_time,varargin)
+        function constructed_filename = filename(drive,animal,rec_day,rec_time,varargin)
+            % Construct server filename
+            % constructed_filename = filename('server | local',animal,rec_day,rec_time,varargin)
 
             switch drive
                 case 'server'
@@ -81,7 +77,7 @@ classdef locations
                 filename_components(cellfun(@(x) ~isempty(x),filename_components));
 
             % Ensure uniform char type, format as path
-            generated_filename = cell2mat(join(convertContainedStringsToChars(filename_components_filled),filesep));
+            constructed_filename = cell2mat(join(convertContainedStringsToChars(filename_components_filled),filesep));
 
         end
 

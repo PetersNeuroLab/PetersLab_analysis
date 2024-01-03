@@ -65,7 +65,8 @@ end
 
 %% Find and package matching recordings
 
-struct_fieldnames = {'day','index','recording','workflow','mousecam','widefield','ephys'};
+struct_fieldnames = {'day','index','recording','workflow', ...
+    'mousecam','widefield','ephys'};
 recordings = cell2struct(cell(length(struct_fieldnames),0),struct_fieldnames);
 
 if ~isempty(recording_day)
