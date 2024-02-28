@@ -27,7 +27,7 @@ for animal_path = {local_data_dir(animal_paths).name}
             animal_dir(curr_day_path).name,'widefield');
 
         if isempty(dir(fullfile(curr_widefield_path,'*.bin')))
-            return
+            continue
         end
 
         process_paths{end+1} = curr_widefield_path;
