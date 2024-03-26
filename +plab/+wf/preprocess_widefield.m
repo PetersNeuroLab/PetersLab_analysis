@@ -1,19 +1,20 @@
-function [U,V,im_avg] = preprocess_widefield(data_path)
-% [U,V,im_color_avg,frame_info] = preprocess_widefield_hamamatsu(im_files)
+function [U,V,im_avg] = preprocess_widefield(data_path,n_colors)
+% [U,V,im_color_avg,frame_info] = preprocess_widefield_hamamatsu(im_files,color_split)
 %
 % SVD-compress widefield imaging from Hamamatsu ORCA-Flash 4.0 v3
-% Assumes: 
-% - alternating 2-color imaging that resets order on recording start
+% Assumes:
 % - data was recorded in widefield GUI (plab.widefield)
 % - each file corresponds to a separate recording
 %
-% Input -- 
+% Input --
 % im_path: path containing widefield images as TIFFs
+% n_colors: number of colors to split SVD processing, assume alternating
+% (note: single SVD on multi-color seems fine)
 %
-% Outputs -- 
-% U: SVD spatial components (by color)
+% Outputs --
+% U: SVD spatial components (color x 1)
 % V: SVD temporal components split by recording (recording x color)
-% im_avg: average raw image (by color)
+% im_avg: average raw image (color x 1)
 
 verbose = true; % Turn off messages by default
 
@@ -81,70 +82,73 @@ end
 % Set image size (from first file)
 im_size = im_size_allfiles(1,:);
 
-%% Create moving-average images
-% (moving average is used to create SVD spatial components)
 
-if verbose; disp('Building image moving average by color...'); end
+%% Perform SVD on subset of frames
 
-n_colors = 2;
+% Thin frames (regardless of color number)
+if verbose; disp('Grabbing thinned set of frames...'); end
 
-% Set moving average number of frames
-n_frame_avg = 15;
-
-% Set max frames to load at once (empirical, avoid memory ceiling)
-max_load_frames = n_frame_avg*250*n_colors;
-
-% Initialize moving average (height x width x frames x color)
-n_mov_avg_frames = sum(floor((im_n_frames/n_colors)/n_frame_avg));
-im_mov_avg = zeros(im_size(1),im_size(2),n_mov_avg_frames,n_colors,'single');
-
-% Loop through files and build moving average for each color
-im_move_avg_frameidx = 1;
+% Thin the number of frames by a factor by taking N frames every K frames
+skip_frames = 100; % (frames to skip at start/end to avoid artifacts)
+thin_factor = 15;
+thinned_frame_idx = cell(size(im_n_frames));
 for curr_file_idx = 1:length(data_dir)
+    curr_n_frames = im_n_frames(curr_file_idx);
+    curr_use_frames = skip_frames:curr_n_frames-skip_frames;
 
-    % Open file for reading
-    curr_data_filename = fullfile( ...
-        data_dir(curr_file_idx).folder, ...
-        data_dir(curr_file_idx).name);
-
-    curr_data_fid = fopen(curr_data_filename,'r');
-
-    % Loop through current file until the end is reached
-    while ~feof(curr_data_fid)
-
-        % Read in chunk of frames (flat)
-        curr_im = reshape(fread(curr_data_fid, ...
-            prod(im_size)*max_load_frames,'uint16=>single'),prod(im_size),[]);
-
-        % Get moving average by color
-        % (only use multiples of n_frame_avg)
-        curr_n_color_frames = floor(floor(size(curr_im,2)/2)/n_frame_avg);
-        curr_im_mov_avg = reshape(permute(mean(reshape( ...
-            curr_im(:,1:curr_n_color_frames*n_colors*n_frame_avg), ...
-            prod(im_size),n_colors,n_frame_avg,[]),3),[1,4,2,3]), ...
-            im_size(1),im_size(2),[],n_colors);
-
-        % Store current moving average, update frame index
-        im_move_avg_lastframeidx = im_move_avg_frameidx+size(curr_im_mov_avg,3)-1;
-        im_mov_avg(:,:,im_move_avg_frameidx:im_move_avg_lastframeidx,:) = curr_im_mov_avg;
-        im_move_avg_frameidx = im_move_avg_lastframeidx+1;
-    end
-
-    % Close file
-    fclose(curr_data_fid);
+    n_thin_groups = curr_n_frames/thin_factor;
+    thin_frame_group = min(floor(linspace(1,n_thin_groups+1,length(curr_use_frames))),n_thin_groups);
+    thinned_frame_idx{curr_file_idx} = curr_use_frames(mod(thin_frame_group,thin_factor) == 1);
 end
 
-% Get total image average
-im_avg = squeeze(mean(im_mov_avg,3));
+% Split thinned frames by color (file x color)
+thinned_frame_idx_color = cell(length(thinned_frame_idx),n_colors);
+for curr_color = 1:n_colors
+    thinned_frame_idx_color(:,curr_color) = ...
+        cellfun(@(x) x(mod(x-1,n_colors) == (curr_color-1)), ...
+        thinned_frame_idx,'uni',false);
+end
 
-%% Do SVD on moving-average images
-% (keep U and S, don't keep V since U will be applied to full dataset next)
+% Grab frames indexed by thinning (1 x color)
+im_raw_thinned = cellfun(@(x) zeros([im_size,x],'single'), ...
+    num2cell(sum(cellfun(@length,thinned_frame_idx_color),1)),'uni',false);
 
-if verbose; disp('Running SVD on moving average images by color...'); end
+for curr_color = 1:n_colors
 
-[U_full,~,~] = arrayfun(@(color) ...
-    svd(reshape(cat(3,im_mov_avg(:,:,:,color)),prod(im_size),[]),'econ'), ...
-    1:n_colors,'uni',false);
+    curr_frame_counter = 1;
+    for curr_file_idx = 1:length(data_dir)
+
+        % Open file for reading
+        curr_data_filename = fullfile( ...
+            data_dir(curr_file_idx).folder, ...
+            data_dir(curr_file_idx).name);
+
+        curr_data_fid = fopen(curr_data_filename,'r');
+
+        % Load all selected frames
+        curr_load_frames = thinned_frame_idx_color{curr_file_idx,curr_color};
+
+        for curr_frame_idx = 1:length(curr_load_frames)
+            curr_frame_location = prod(im_size)*(curr_load_frames(curr_frame_idx)-1)*2; % uint16: *2 bytes
+            fseek(curr_data_fid,curr_frame_location,-1);
+            im_raw_thinned{curr_color}(:,:,curr_frame_counter) = ...
+                reshape(fread(curr_data_fid,prod(im_size),'uint16=>single'),im_size);
+            curr_frame_counter = curr_frame_counter + 1;
+        end
+
+        % Close file
+        fclose(curr_data_fid);
+    end
+end
+
+% Get thinned image average
+im_avg = cellfun(@(x) mean(x,3),im_raw_thinned,'uni',false);
+
+% Do SVD on images, keep spatial components (U's)
+if verbose; disp('Performing SVD...'); end
+
+[U_full,~,~] = cellfun(@(x) svd(reshape(x,prod(im_size),[]),'econ'), ...
+    im_raw_thinned,'uni',false);
 
 % Keep only the max number of components
 U_flat = cellfun(@(x) x(:,1:min(size(x,2),max_components)),U_full,'uni',false);
@@ -156,11 +160,14 @@ clear U_full
 % (and only keep the maximum number of set components)
 U = cellfun(@(x) reshape(x,im_size(1),im_size(2),[]),U_flat,'uni',false);
 
+
 %% Apply spatial components (U's) from SVD to full data
 % (note: spatial components are applied as U' * mean-subtracted data, so
 % the resulting matrix is equivalent to S*V but just called 'V')
 
 if verbose; disp('Applying SVD spatial components to full data...'); end
+
+max_load_frames = 7500; % (empirical: the biggest chunk loadable)
 
 V = cell(length(data_dir),n_colors);
 for curr_file_idx = 1:length(data_dir)
@@ -182,11 +189,11 @@ for curr_file_idx = 1:length(data_dir)
         % Loop through colors
         for curr_color = 1:n_colors
             % Assume alternating (load in multiples to start on same)
-            curr_color_frames = mod(0:size(curr_im,2)-1,n_colors)+1 == curr_color;
+            curr_color_frames = mod((1:size(curr_im,2))-1,n_colors) == (curr_color-1);
 
             % Apply spatial components to mean-subtracted data
             curr_V = U_flat{curr_color}'* ...
-                (curr_im(:,curr_color_frames) - reshape(im_avg(:,:,curr_color),[],1));
+                (curr_im(:,curr_color_frames) - reshape(im_avg{curr_color},[],1));
 
             % Build full V by concatenating
             V{curr_file_idx,curr_color} = horzcat(V{curr_file_idx,curr_color},curr_V);
@@ -199,40 +206,6 @@ for curr_file_idx = 1:length(data_dir)
 end
 
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

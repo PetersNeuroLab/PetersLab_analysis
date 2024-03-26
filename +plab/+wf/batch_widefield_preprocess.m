@@ -47,26 +47,31 @@ for curr_process_path_cell = process_paths
         fprintf('Preprocessing: %s \n',curr_process_path);
 
         %% SVD decomposition of widefield data
-        [U,V,im_avg_color] = plab.wf.preprocess_widefield(curr_process_path);
+        n_colors = 1; % (currently set: SVD on multiple colors together)
+        [U,V,im_avg] = plab.wf.preprocess_widefield(curr_process_path,n_colors);
 
         %% Save preprocessed widefield data locally
 
         local_save_path = curr_process_path;
 
-        % Assume 2 colors in order of blue/violet
-        color_names = {'blue','violet'};
+        % Set color names (empty if SVD not split by color)
+        if n_colors == 1
+            color_suffix = {''};
+        else
+            color_suffix = arrayfun(@(x) sprintf('_color%d',x),1:2,'uni',false);
+        end
 
         % Save mean images in experiment folder by color
-        for curr_color = 1:length(color_names)
+        for curr_color = 1:length(color_suffix)
             curr_mean_im_fn = fullfile(local_save_path, ...
-                sprintf('meanImage_%s.npy',color_names{curr_color}));
-            writeNPY(im_avg_color(:,:,curr_color),curr_mean_im_fn);
+                sprintf('meanImage%s.npy',color_suffix{curr_color}));
+            writeNPY(im_avg{curr_color},curr_mean_im_fn);
         end
 
         % Save spatial components in experiment (animal/day) folder by color
-        for curr_color = 1:length(color_names)
+        for curr_color = 1:length(color_suffix)
             curr_U_fn = fullfile(local_save_path, ...
-                sprintf('svdSpatialComponents_%s.npy',color_names{curr_color}));
+                sprintf('svdSpatialComponents%s.npy',color_suffix{curr_color}));
             writeNPY(U{curr_color},curr_U_fn);
         end
 
@@ -75,10 +80,10 @@ for curr_process_path_cell = process_paths
         data_dir = dir(fullfile(curr_process_path,'*_data.bin'));
         recording_times = extract({data_dir.name},digitsPattern);
         for curr_recording = 1:size(V,1)
-            for curr_color = 1:length(color_names)
+            for curr_color = 1:length(color_suffix)
                 % Put V's into separate recording paths
                 curr_V_fn = fullfile(local_save_path,recording_times{curr_recording}, ...
-                    sprintf('svdTemporalComponents_%s.npy',color_names{curr_color}));
+                    sprintf('svdTemporalComponents%s.npy',color_suffix{curr_color}));
                 % Make recording path
                 if ~exist(fileparts(curr_V_fn),'dir')
                     mkdir(fileparts(curr_V_fn));

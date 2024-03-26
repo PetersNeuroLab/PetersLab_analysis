@@ -19,8 +19,7 @@ function [V_neuro_hemocorr,hemocorr_t] = hemo_correct(U_neuro,V_neuro,t_neuro,U_
 px_downsample = 5;
 
 % Frequency for filtering heartbeat
-% (usually ~10-15 bps)
-heartbeat_freq = [10,15];
+heartbeat_freq = [8,12];
 
 %% Overlap neuro/hemo signals
 
@@ -44,20 +43,23 @@ hemocorr_t = t_hemo;
 use_frame_range = round(prctile(1:size(V_neuro,2),[12.5,87.5]));
 use_frames = use_frame_range(1):use_frame_range(2);
 
+%%%%%% TESTING
+
+% Filter V's at heartbeat frequency
+wf_framerate = 1/mean(diff(t_neuro));
+[b,a] = butter(2,heartbeat_freq/(wf_framerate/2));
+
+V_neuro_th_heartbeat = filter(b,a,V_neuro_th')';
+V_hemo_Un_heartbeat = filter(b,a,V_hemo_Un')';
+
 % Downsample U
 U_neuro_downsamp = imresize(U_neuro,1/px_downsample,'nearest');
 
 % Get pixel traces (t x px) from downsampled U
-px_neuro = reshape(plab.wf.svd2px(U_neuro_downsamp, ...
-    V_neuro_th(:,use_frames)),[],length(use_frames))';
-px_hemo_Un = reshape(plab.wf.svd2px(U_neuro_downsamp, ...
-    V_hemo_Un(:,use_frames)),[],length(use_frames))';
-
-% Filter both colors at heartbeat frequency, subtract mean
-wf_framerate = 1/mean(diff(t_neuro));
-[b,a] = butter(2,heartbeat_freq/(wf_framerate/2));
-px_neuro_heartbeat = filter(b,a,px_neuro-nanmean(px_neuro,1));
-px_hemo_heartbeat = filter(b,a,px_hemo_Un-nanmean(px_hemo_Un,1));
+px_neuro_heartbeat = reshape(plab.wf.svd2px(U_neuro_downsamp, ...
+    V_neuro_th_heartbeat(:,use_frames)),[],length(use_frames))';
+px_hemo_heartbeat = reshape(plab.wf.svd2px(U_neuro_downsamp, ...
+    V_hemo_Un_heartbeat(:,use_frames)),[],length(use_frames))';
 
 % Get scaling of violet to blue from heartbeat
 % scaling = cov(neuro-mean,hemo-mean)/var(hemo-mean)
@@ -69,6 +71,35 @@ hemo_scale_V_tform = ...
     pinv(reshape(U_neuro_downsamp,[],size(U_neuro_downsamp,3)))* ...
     diag(hemo_scale_px_downsamp)* ...
     reshape(U_neuro_downsamp,[],size(U_neuro_downsamp,3));
+
+
+%%%%%%
+
+% % Downsample U
+% U_neuro_downsamp = imresize(U_neuro,1/px_downsample,'nearest');
+% 
+% % Get pixel traces (t x px) from downsampled U
+% px_neuro = reshape(plab.wf.svd2px(U_neuro_downsamp, ...
+%     V_neuro_th(:,use_frames)),[],length(use_frames))';
+% px_hemo_Un = reshape(plab.wf.svd2px(U_neuro_downsamp, ...
+%     V_hemo_Un(:,use_frames)),[],length(use_frames))';
+% 
+% % Filter both colors at heartbeat frequency, subtract mean
+% wf_framerate = 1/mean(diff(t_neuro));
+% [b,a] = butter(2,heartbeat_freq/(wf_framerate/2));
+% px_neuro_heartbeat = filter(b,a,px_neuro-nanmean(px_neuro,1));
+% px_hemo_heartbeat = filter(b,a,px_hemo_Un-nanmean(px_hemo_Un,1));
+% 
+% % Get scaling of violet to blue from heartbeat
+% % scaling = cov(neuro-mean,hemo-mean)/var(hemo-mean)
+% hemo_scale_px_downsamp = sum(px_neuro_heartbeat.*px_hemo_heartbeat)./ ...
+%     sum(px_hemo_heartbeat.^2);
+% 
+% % Get transform matrix to convert scaling from pixel-space to V-space
+% hemo_scale_V_tform = ...
+%     pinv(reshape(U_neuro_downsamp,[],size(U_neuro_downsamp,3)))* ...
+%     diag(hemo_scale_px_downsamp)* ...
+%     reshape(U_neuro_downsamp,[],size(U_neuro_downsamp,3));
 
 %% Hemo-correct neuro signal
 
