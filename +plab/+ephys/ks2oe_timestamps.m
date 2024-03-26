@@ -23,7 +23,7 @@ function ks2oe_timestamps(ks_spike_times_fn,oe_samples_fn,sample_rate)
 % Saves spike_times_openephys.npy (in same folder as spike_times.npy)
 
 % Load in Kilosort spike times, Open Ephys samples, Open Ephys metadata
-ks_spike_samples = readNPY(ks_spike_times_fn);
+ks_spike_samples = readNPY(ks_spike_times_fn) + 1; % convert to 1-index
 oe_samples = readNPY(oe_samples_fn);
 
 % Get timestamps by indexing Open Ephys samples as Kilosort samples and
@@ -61,14 +61,16 @@ end
 
 % Save spike times
 save_fn = fullfile(fileparts(ks_spike_times_fn),'spike_times_openephys.npy');
-if exist(save_fn,'file')
+if ~exist(save_fn,'file')
+    writeNPY(ks_spike_times_oe,save_fn);
+else
     % Confirm overwrite if a file already exists
     user_confirm = questdlg(sprintf('spike_times_openephys.npy exists, overwrite? \n\n%s',save_fn));
     if strcmp(user_confirm,'Yes')
         writeNPY(ks_spike_times_oe,save_fn);
     end
 end
- 
+
 % Print result
 fprintf('Converted and saved Open Ephys spike times: %s\n',save_fn);
 
