@@ -28,36 +28,12 @@ oe_samples = readNPY(oe_samples_fn);
 
 % Get timestamps by indexing Open Ephys samples as Kilosort samples and
 % dividing by sample rate
-ks_spike_times_oe = double(oe_samples(ks_spike_samples))/sample_rate;
-
-% NOTE: sometimes kilsort outputs indicies of spike times which are
-% not in the range of recording?! Give a warning and calculate
-% those times with the sample rate
-spike_times_kilosort_validtime = ...
-    ks_spike_times_oe >= 1 & ...
-    ks_spike_times_oe <= oe_samples(end);
-
-%%%%%%%%%%%%%%% crossing this bridge when I get to it
-if ~all(spike_times_kilosort_validtime)
-    error('Kilosort spike times out-of-range - finish writing this code')
-end
-
-% if all(spike_times_kilosort_validtime)
-%     spike_times_openephys = openephys_ap_timestamps(spike_times_kilosort);
-% else
-%     ap_sample_time = median(diff(openephys_ap_timestamps));
-%     warning('Kilosort %s: %d spike times out of time range of data, interpolating', ....
-%         ks_spike_times_fn,sum(~spike_times_kilosort_validtime));
-%     spike_times_openephys = nan(size(spike_times_kilosort));
-%     spike_times_openephys(spike_times_kilosort_validtime) = ...
-%         openephys_ap_timestamps(spike_times_kilosort(spike_times_kilosort_validtime));
-% 
-%     % (interpolate from first and last sample times given rate)
-%     spike_times_openephys(~spike_times_kilosort_validtime) = ...
-%         interp1([0,1,length(openephys_ap_timestamps),length(openephys_ap_timestamps)+1], ...
-%         sort(reshape([openephys_ap_timestamps([1,end]),openephys_ap_timestamps([1,end])+([-1;1].*ap_sample_time)],1,[])), ...
-%         double(spike_times_kilosort(~spike_times_kilosort_validtime)),'linear','extrap');
-% end
+% (note: kilosort can give negative spike times or spike times beyond the
+% recording, so extrapolate)
+ks_spike_samples_oe = ...
+    interp1(1:length(oe_samples),double(oe_samples), ...
+    double(ks_spike_samples),'linear','extrap');
+ks_spike_times_oe = ks_spike_samples_oe/sample_rate;
 
 % Save spike times
 save_fn = fullfile(fileparts(ks_spike_times_fn),'spike_times_openephys.npy');
