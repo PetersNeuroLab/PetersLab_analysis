@@ -114,7 +114,7 @@ switch align_type
 
         % Check and manually align bad alignments by control points
         while true
-            f = AP_imscroll(im_aligned);
+            f = ap.imscroll(im_aligned);
             clim(prctile(im_aligned(:),[1,99]));
             axis image;
             user_input = input('Manual align? (#,s=save, q=quit): ','s');
@@ -211,8 +211,8 @@ switch align_type
         end
 
         % Plot day-aligned VFS
-        AP_imscroll(cat(3,aligned_vfs{:}));
-        colormap(AP_colormap('BWR'));clim([-1,1]);
+        ap.imscroll(cat(3,aligned_vfs{:}));
+        colormap(ap.colormap('BWR'));clim([-1,1]);
         axis image off;
         title('Day-aligned VFS')
 
@@ -243,14 +243,14 @@ switch align_type
         imagesc(master_align);
         axis image off
         clim([-1,1]);
-        colormap(AP_colormap('BWR'));
+        colormap(ap.colormap('BWR'));
         ap.wf_draw('ccf',[0.5,0.5,0.5]);
         title('Master')
         nexttile;
         imagesc(im_aligned);
         axis image off
         clim([-1,1]);
-        colormap(AP_colormap('BWR'));
+        colormap(ap.colormap('BWR'));
         ap.wf_draw('ccf',[0.5,0.5,0.5]);
         title('Aligned')
 
@@ -331,7 +331,7 @@ switch align_type
             end
 
             vfs_ref = nanmean(vfs_aligned,3);
-            AP_print_progress_fraction(curr_loop,n_loops);
+            ap.print_progress_fraction(curr_loop,n_loops);
         end
 
         % Symmetrize the average aligned VFS
@@ -352,7 +352,7 @@ switch align_type
             vfs_ref = curr_im_reg;
 
             ref_reg(:,:,curr_loop) = vfs_ref;
-            AP_print_progress_fraction(curr_loop,n_loops);
+            ap.print_progress_fraction(curr_loop,n_loops);
         end
 
         % Set make symmetric-average map the master
@@ -437,7 +437,7 @@ switch align_type
             end
 
             vfs_ref = nanmean(vfs_aligned,3);
-            AP_print_progress_fraction(curr_loop,n_loops);
+            ap.print_progress_fraction(curr_loop,n_loops);
         end
 
         % Symmetrize the average aligned VFS
@@ -458,7 +458,7 @@ switch align_type
             vfs_ref = curr_im_reg;
 
             ref_reg(:,:,curr_loop) = vfs_ref;
-            AP_print_progress_fraction(curr_loop,n_loops);
+            ap.print_progress_fraction(curr_loop,n_loops);
         end
 
         % Set make symmetric-average map the master
