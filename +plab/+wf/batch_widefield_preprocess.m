@@ -47,7 +47,11 @@ for curr_process_path_cell = process_paths
         fprintf('Preprocessing: %s \n',curr_process_path);
 
         %% SVD decomposition of widefield data
-        n_colors = 1; % (currently set: SVD on multiple colors together)
+        
+        % Currently: SVD 2 colors separately, assume alt. blue/violet
+        wf_colors = {'blue','violet'};
+        n_colors = length(wf_colors);
+
         [U,V,im_avg] = plab.wf.preprocess_widefield(curr_process_path,n_colors);
 
         %% Save preprocessed widefield data locally
@@ -58,7 +62,7 @@ for curr_process_path_cell = process_paths
         if n_colors == 1
             color_suffix = {''};
         else
-            color_suffix = arrayfun(@(x) sprintf('_color%d',x),1:2,'uni',false);
+            color_suffix = cellfun(@(x) sprintf('_%s',x),wf_colors,'uni',false);
         end
 
         % Save mean images in experiment folder by color
