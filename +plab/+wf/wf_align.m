@@ -539,7 +539,7 @@ switch align_type
             otherwise
                 % Apply both day and animal alignments (if available)
                 curr_day_tform = wf_tform.day_tform{curr_day_idx};
-                if ~isempty(wf_tform.animal_tform)
+                if isfield(wf_tform,'animal_tform') && ~isempty(wf_tform.animal_tform)
                     curr_animal_tform = wf_tform.animal_tform;
                     curr_tform = curr_day_tform*curr_animal_tform;
                     ref_size = wf_tform.master_ref_size;
