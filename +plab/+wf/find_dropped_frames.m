@@ -1,14 +1,19 @@
-function [dropped_frames,dropped_frame_idx] = find_dropped_frames(animal,rec_day,rec_time)
-% [dropped_frames,dropped_frame_idx] = find_dropped_frames(animal,rec_day,rec_time)
+function [dropped_frames,dropped_frame_idx] = find_dropped_frames(widefield_metadata_fn,plot_flag)
+% [dropped_frames,dropped_frame_idx] = find_dropped_frames(widefield_metadata_fn,plot_flag)
 %
 % Determine if/which widefield frames were dropped
+%
+% [Inputs]
+% widefield_metadata_fn: filename for widefield metadata
+% plot_flag: flag to plot dropped frames (default on)
+%
 % [Outputs] 
 % dropped_frames: fractional index of dropped frame (e.g. 25.5)
 % dropped_frame_idx: boolean vector of dropped frames
 
-widefield_metadata_fn = ...
-    plab.locations.filename('server',animal,rec_day,[], ...
-    'widefield',sprintf('widefield_%s_metadata.bin',rec_time));
+if ~exist('plot_flag','var') || isempty(plot_flag)
+    plot_flag = true;
+end
 
 % Load widefield metadata (recorded from plab.widefield)
 fid = fopen(widefield_metadata_fn);
@@ -30,7 +35,7 @@ long_frametime_idx = find(frame_upload_time_diff > frame_interval*1.5) + 1;
 dropped_frames = nan(1,0);
 
 multi_frame_grab_timethresh = frame_interval/2;
-for curr_skipped_frame = long_frametime_idx
+for curr_skipped_frame = reshape(long_frametime_idx,1,[])
     % Get number of frames likely skipped
     n_skipped_frames = round(frame_upload_time_diff(curr_skipped_frame-1)/frame_interval);
 
@@ -55,14 +60,12 @@ all_frame_idx = sort(horzcat(1:n_frames,dropped_frames));
 dropped_frame_idx = mod(all_frame_idx,1) ~= 0;
 
 % Plot frame time and assumed dropped frame
-if any(long_frametime_idx)
+if plot_flag && any(long_frametime_idx)
     figure; hold on;
     plot([NaN;frame_upload_time_diff],'.k');
     xline(dropped_frames,'r');
-    title('Widefield dropped frames');
+    title({'Widefield dropped frames:',widefield_metadata_fn},'interpreter','none');
 end
-
-
 
 
 

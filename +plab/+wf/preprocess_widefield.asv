@@ -197,7 +197,7 @@ for curr_file_idx = 1:length(data_dir)
         % Loop through colors
         for curr_color = 1:n_colors
             % Assume alternating (load in multiples to start on same)
-            curr_color_frames = im_color{curr_file_idx}(curr_frame_idx) == curr_color;
+            curr_color_frames = im_color{curr_file_idx}(curr_frame_idx) == (curr_color-1);
 
             % Apply spatial components to mean-subtracted data
             curr_V = U_flat{curr_color}'* ...
