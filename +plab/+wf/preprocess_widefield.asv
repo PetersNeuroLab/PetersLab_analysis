@@ -68,7 +68,7 @@ for curr_metadata_idx = 1:length(metadata_dir)
     im_n_frames(curr_metadata_idx) = size(curr_metadata,2);
 
     % Check for dropped frames
-    [dropped_frames,dropped_frame_idx] = ...
+    [~,dropped_frame_idx] = ...
         plab.wf.find_dropped_frames(curr_metadata_filename);
 
     % Set frame color (assume alternating, account for dropped frames)
@@ -197,7 +197,7 @@ for curr_file_idx = 1:length(data_dir)
         % Loop through colors
         for curr_color = 1:n_colors
             % Assume alternating (load in multiples to start on same)
-            curr_color_frames = im_color{curr_file_idx}(curr_frame_idx) == (curr_color-1);
+            curr_color_frames = im_color{curr_file_idx}(curr_frame_idx) == curr_color;
 
             % Apply spatial components to mean-subtracted data
             curr_V = U_flat{curr_color}'* ...

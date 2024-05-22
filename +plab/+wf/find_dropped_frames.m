@@ -56,11 +56,11 @@ end
 
 % Make boolean array of dropped frames
 n_frames = size(widefield_metadata,2);
-all_frame_idx = sort(horzcat(1:n_frames,dropped_frames));
+all_frame_idx = sort(horzcat(1:n_frames,dropped_frames))';
 dropped_frame_idx = mod(all_frame_idx,1) ~= 0;
 
 % Plot frame time and assumed dropped frame
-if plot_flag && any(long_frametime_idx)
+if plot_flag && any(dropped_frames)
     figure; hold on;
     plot([NaN;frame_upload_time_diff],'.k');
     xline(dropped_frames,'r');

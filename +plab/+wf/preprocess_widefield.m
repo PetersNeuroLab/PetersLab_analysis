@@ -68,7 +68,7 @@ for curr_metadata_idx = 1:length(metadata_dir)
     im_n_frames(curr_metadata_idx) = size(curr_metadata,2);
 
     % Check for dropped frames
-    [dropped_frames,dropped_frame_idx] = ...
+    [~,dropped_frame_idx] = ...
         plab.wf.find_dropped_frames(curr_metadata_filename);
 
     % Set frame color (assume alternating, account for dropped frames)
