@@ -49,14 +49,14 @@ for curr_skipped_frame = reshape(long_frametime_idx,1,[])
     % from frame after the long frametime)
     if n_skipped_frames ~= long_frametime_n_collected_frames
         n_dropped_frames = n_skipped_frames - long_frametime_n_collected_frames;
-        dropped_frame_linspace = linspace(curr_skipped_frame,curr_skipped_frame+1,2+n_dropped_frames);
+        dropped_frame_linspace = linspace(curr_skipped_frame,curr_skipped_frame+1,2+n_dropped_frames)';
         dropped_frames = vertcat(dropped_frames,dropped_frame_linspace(2:end-1));
     end
 end
 
 % Make boolean array of dropped frames
 n_frames = size(widefield_metadata,2);
-all_frame_idx = sort(horzcat(1:n_frames,dropped_frames))';
+all_frame_idx = sort(vertcat((1:n_frames)',dropped_frames));
 dropped_frame_idx = mod(all_frame_idx,1) ~= 0;
 
 % Plot frame time and assumed dropped frame
