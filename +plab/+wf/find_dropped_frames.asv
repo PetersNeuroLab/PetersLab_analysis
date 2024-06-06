@@ -28,29 +28,38 @@ frame_upload_time_diff = seconds(diff(frame_upload_time));
 frame_interval = median(frame_upload_time_diff);
 long_frametime_idx = find(frame_upload_time_diff > frame_interval*1.5) + 1;
 
-% For each skipped frame: check if the correct number was uploaded 
-% (e.g. get expected frames by time from the anomaly to the next normal
-% time, check if all frames are accounted for or if any are missing)
+% For each skipped frame: check if the correct number was uploaded (e.g. if
+% interval was 3x, check that 2 frames were uploaded immediately after the
+% delayed frame to account for all 3 frames)
 % (record dropped frames as fractional frame indicies)
 dropped_frames = nan(1,0);
 
 multi_frame_grab_timethresh = frame_interval/2;
 for curr_skipped_frame = reshape(long_frametime_idx,1,[])
+
+    %%%%%%%% TESTING
     
     % Get the next pair of frames collected with a normal interval
-    next_normal_interval = curr_skipped_frame + ...
-        find(frame_upload_time_diff(curr_skipped_frame:end) > frame_interval*0.9,1) - 1;
+    find(frame_upload_time_diff(curr_skipped_frame:end) > frame_interval*0.9,1)
 
-    % Get number of frames skipped (expected from time minus collected)
-    n_dropped_frames = ...
-        floor(sum(frame_upload_time_diff(curr_skipped_frame-1:next_normal_interval))/frame_interval) - ...
-        (length(curr_skipped_frame-1:next_normal_interval));
+    %%%%%%%%%%%%%%%%%%
 
-    if n_dropped_frames ~= 0
+    % Get number of frames likely skipped
+    n_skipped_frames = round(frame_upload_time_diff(curr_skipped_frame-1)/frame_interval);
+
+    % Check if correct number of frames grabbed together after skip
+    % (after long time, n frametimes which were under normal frame time)
+    long_frametime_n_collected_frames = ...
+        1 + sum(frame_upload_time_diff(curr_skipped_frame-1 + [1:n_skipped_frames-1]) < ...
+        multi_frame_grab_timethresh);
+
+    % If skipped frames doesn't match collected frames, record drop (assume
+    % from frame after the long frametime)
+    if n_skipped_frames ~= long_frametime_n_collected_frames
+        n_dropped_frames = n_skipped_frames - long_frametime_n_collected_frames;
         dropped_frame_linspace = linspace(curr_skipped_frame,curr_skipped_frame+1,2+n_dropped_frames)';
         dropped_frames = vertcat(dropped_frames,dropped_frame_linspace(2:end-1));
     end
-
 end
 
 % Make boolean array of dropped frames
