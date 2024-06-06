@@ -43,12 +43,15 @@ for curr_skipped_frame = reshape(long_frametime_idx,1,[])
 
     % Get number of frames skipped (expected from time minus collected)
     n_dropped_frames = ...
-        floor(sum(frame_upload_time_diff(curr_skipped_frame-1:next_normal_interval))/frame_interval) - ...
+        round(sum(frame_upload_time_diff(curr_skipped_frame-1:next_normal_interval))/frame_interval) - ...
         (length(curr_skipped_frame-1:next_normal_interval));
 
-    if n_dropped_frames ~= 0
+    if n_dropped_frames > 0
         dropped_frame_linspace = linspace(curr_skipped_frame,curr_skipped_frame+1,2+n_dropped_frames)';
         dropped_frames = vertcat(dropped_frames,dropped_frame_linspace(2:end-1));
+    elseif n_dropped_frames < 0
+        % If there are more frames collected than expected, bug in code
+        error('Widefield dropped frame incorrectly estimated')
     end
 
 end
@@ -59,7 +62,7 @@ all_frame_idx = sort(vertcat((1:n_frames)',dropped_frames));
 dropped_frame_idx = mod(all_frame_idx,1) ~= 0;
 
 % Plot frame time and assumed dropped frame
-if plot_flag && any(dropped_frames)
+if plot_flag && ~isempty(dropped_frames)
     figure; hold on;
     plot([NaN;frame_upload_time_diff],'.k');
     xline(dropped_frames,'r');
