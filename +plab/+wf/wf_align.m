@@ -553,7 +553,7 @@ switch align_type
         % Transform image, cast to input data type
         tform = affinetform2d;
         tform.T = curr_tform;
-        im_aligned = cast(imwarp(im_unaligned,tform,'Outputview',imref2d(ref_size)), ...
+        im_aligned = cast(imwarp(im_unaligned,tform,'nearest','Outputview',imref2d(ref_size)), ...
             class(im_unaligned));
 
 
