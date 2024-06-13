@@ -108,6 +108,11 @@ for curr_file_idx = 1:length(data_dir)
     end
 end
 
+downsampled_frame_idx = arrayfun(@(color) ...
+    mat2cell(1:length(horzcat(downsampled_frame_idx_color{:,color})), ...
+    1,cellfun(@length,downsampled_frame_idx_color(:,color))), ...
+    1:n_colors,'uni',false);
+
 % Grab downsampled subsets of frames (file x color)
 im_raw_downsampled = cellfun(@(x) zeros([im_size,x],'single'), ...
     num2cell(sum(cellfun(@length,downsampled_frame_idx_color),1)),'uni',false);
@@ -129,7 +134,8 @@ for curr_color = 1:n_colors
             curr_frame_location = prod(im_size)*(curr_load_frames(curr_frame_idx)-1)*2; % uint16: *2 bytes
             fseek(curr_data_fid,curr_frame_location,-1);
 
-            im_raw_downsampled{curr_color}(:,:,curr_frame_idx) = ...
+            curr_downsampled_frame_idx = downsampled_frame_idx{curr_color}{curr_file_idx}(curr_frame_idx);
+            im_raw_downsampled{curr_color}(:,:,curr_downsampled_frame_idx) = ...
                 reshape(fread(curr_data_fid,prod(im_size),'uint16=>single'),im_size);
         end
 

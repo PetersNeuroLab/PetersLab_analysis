@@ -28,38 +28,40 @@ frame_upload_time_diff = seconds(diff(frame_upload_time));
 frame_interval = median(frame_upload_time_diff);
 long_frametime_idx = find(frame_upload_time_diff > frame_interval*1.5) + 1;
 
-% For each skipped frame: check if the correct number was uploaded (e.g. if
-% interval was 3x, check that 2 frames were uploaded immediately after the
-% delayed frame to account for all 3 frames)
+% For each skipped frame: check if the correct number was uploaded 
+% (e.g. get expected frames by time from the anomaly to the next normal
+% time, check if all frames are accounted for or if any are missing)
 % (record dropped frames as fractional frame indicies)
 dropped_frames = nan(1,0);
 
 multi_frame_grab_timethresh = frame_interval/2;
-for curr_skipped_frame = reshape(long_frametime_idx,1,[])
-
-    %%%%%%%% TESTING
+for curr_longframe = reshape(long_frametime_idx,1,[])
     
+    %%%%%% TESTING
+
+    n_dropped_frames = ...
+        round(sum(frame_upload_time_diff(curr_longframe-1:next_normal_interval-1))/frame_interval) - ...
+        (length(curr_longframe-1:next_normal_interval-1));
+
+    %%%%%%%%%%%%%%%
+
     % Get the next pair of frames collected with a normal interval
-    find(frame_upload_time_diff(curr_skipped_frame:end) > frame_interval*0.9,1)
+    next_normal_interval = curr_longframe + ...
+        find(frame_upload_time_diff(curr_longframe:end) > frame_interval*0.9,1) - 1;
 
-    %%%%%%%%%%%%%%%%%%
+    % Get number of frames skipped (expected from time minus collected)
+    n_dropped_frames = ...
+        round(sum(frame_upload_time_diff(curr_longframe-1:next_normal_interval))/frame_interval) - ...
+        (length(curr_longframe-1:next_normal_interval));
 
-    % Get number of frames likely skipped
-    n_skipped_frames = round(frame_upload_time_diff(curr_skipped_frame-1)/frame_interval);
-
-    % Check if correct number of frames grabbed together after skip
-    % (after long time, n frametimes which were under normal frame time)
-    long_frametime_n_collected_frames = ...
-        1 + sum(frame_upload_time_diff(curr_skipped_frame-1 + [1:n_skipped_frames-1]) < ...
-        multi_frame_grab_timethresh);
-
-    % If skipped frames doesn't match collected frames, record drop (assume
-    % from frame after the long frametime)
-    if n_skipped_frames ~= long_frametime_n_collected_frames
-        n_dropped_frames = n_skipped_frames - long_frametime_n_collected_frames;
-        dropped_frame_linspace = linspace(curr_skipped_frame,curr_skipped_frame+1,2+n_dropped_frames)';
+    if n_dropped_frames > 0
+        dropped_frame_linspace = linspace(curr_longframe,curr_longframe+1,2+n_dropped_frames)';
         dropped_frames = vertcat(dropped_frames,dropped_frame_linspace(2:end-1));
+    elseif n_dropped_frames < 0
+        % If there are more frames collected than expected, bug in code
+        error('Widefield dropped frame incorrectly estimated')
     end
+
 end
 
 % Make boolean array of dropped frames
@@ -68,12 +70,49 @@ all_frame_idx = sort(vertcat((1:n_frames)',dropped_frames));
 dropped_frame_idx = mod(all_frame_idx,1) ~= 0;
 
 % Plot frame time and assumed dropped frame
-if plot_flag && any(dropped_frames)
+if plot_flag && ~isempty(dropped_frames)
     figure; hold on;
     plot([NaN;frame_upload_time_diff],'.k');
     xline(dropped_frames,'r');
     title({'Widefield dropped frames:',widefield_metadata_fn},'interpreter','none');
 end
+
+
+
+
+
+%%%%%%%%%%% TESTING
+
+
+frame_upload_time_relative = seconds(frame_upload_time(2:end)-frame_upload_time(1));
+
+x = round(frame_upload_time_relative./frame_interval);
+r = x-(1:length(x))';
+
+
+figure;plot(,'.k')
+
+
+
+figure;plot(frame_upload_time_diff/frame_interval,'.')
+
+
+
+p = cumsum(frame_upload_time_diff/frame_interval) - (1:length(frame_upload_time_diff))';
+
+
+round(sum(frame_upload_time_diff)/frame_interval) - n_frames
+
+
+
+
+
+
+
+
+
+
+
 
 
 

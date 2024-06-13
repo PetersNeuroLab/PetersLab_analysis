@@ -35,19 +35,20 @@ long_frametime_idx = find(frame_upload_time_diff > frame_interval*1.5) + 1;
 dropped_frames = nan(1,0);
 
 multi_frame_grab_timethresh = frame_interval/2;
-for curr_skipped_frame = reshape(long_frametime_idx,1,[])
-    
+for curr_longframe = reshape(long_frametime_idx,1,[])
+
     % Get the next pair of frames collected with a normal interval
-    next_normal_interval = curr_skipped_frame + ...
-        find(frame_upload_time_diff(curr_skipped_frame:end) > frame_interval*0.9,1) - 1;
+    next_normal_interval = curr_longframe + ...
+        find(frame_upload_time_diff(curr_longframe:end) > frame_interval*0.9,1) - 1;
 
     % Get number of frames skipped (expected from time minus collected)
+    % across adjoining abnormal frame times
     n_dropped_frames = ...
-        round(sum(frame_upload_time_diff(curr_skipped_frame-1:next_normal_interval))/frame_interval) - ...
-        (length(curr_skipped_frame-1:next_normal_interval));
+        round(sum(frame_upload_time_diff(curr_longframe-1:next_normal_interval-1))/frame_interval) - ...
+        (length(curr_longframe-1:next_normal_interval-1));
 
     if n_dropped_frames > 0
-        dropped_frame_linspace = linspace(curr_skipped_frame,curr_skipped_frame+1,2+n_dropped_frames)';
+        dropped_frame_linspace = linspace(curr_longframe,curr_longframe+1,2+n_dropped_frames)';
         dropped_frames = vertcat(dropped_frames,dropped_frame_linspace(2:end-1));
     elseif n_dropped_frames < 0
         % If there are more frames collected than expected, bug in code
@@ -68,6 +69,12 @@ if plot_flag && ~isempty(dropped_frames)
     xline(dropped_frames,'r');
     title({'Widefield dropped frames:',widefield_metadata_fn},'interpreter','none');
 end
+
+
+
+
+
+
 
 
 
