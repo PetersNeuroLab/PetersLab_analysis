@@ -144,7 +144,7 @@ end
 
 %% If no recordings found, error out
 if isempty(recordings)
-    error('No recordings found: %s [%s] [%s]',animal,strjoin(recording_day,','),strjoin(workflow,','))
+    warning('No recordings found: %s [%s] [%s]',animal,strjoin(recording_day,','),strjoin(workflow,','))
 end
 
 
