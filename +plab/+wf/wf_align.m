@@ -71,40 +71,35 @@ switch align_type
         im_x_max = max(im_x);
         ref_size = [im_y_max,im_x_max];
 
-        im_unaligned_pad = ...
-            cell2mat(reshape(cellfun(@(im) padarray(im, ...
-            [im_y_max - size(im,1),im_x_max - size(im,2)]./2,0,'both'), ...
-            im_unaligned,'uni',false),1,1,[]));
-
         % Intensity-normalize the image used for alignment
-        im_unaligned_pad_norm = imgaussfilt(im_unaligned_pad,2)./ ...
-            imgaussfilt(im_unaligned_pad,10);
+        % (aligns edges, e.g. vasculature)
+        im_unaligned_norm = cellfun(@(x) imgaussfilt(x,2)./imgaussfilt(x,10),im_unaligned,'uni',false);
 
-        %         (set transform optimizer)
+        % >> Set transform optimizer:
         % (for OnePlusOneEvolutionary)
         [optimizer, metric] = imregconfig('monomodal');
         optimizer = registration.optimizer.OnePlusOneEvolutionary();
         optimizer.MaximumIterations = 200;
         optimizer.GrowthFactor = 1+1e-7;
-        optimizer.InitialRadius = 1e-5;
+        optimizer.InitialRadius = 1e-4;
         optimizer.Epsilon = 1.5e-5;
 
-        %         % (for RegularStepGradientDescent)
-        %         [optimizer, metric] = imregconfig('monomodal');
-        %         optimizer.GradientMagnitudeTolerance = 1e-7;
-        %         optimizer.MaximumIterations = 300;
-        %         optimizer.MaximumStepLength = 1e-5;
-        %         optimizer.MinimumStepLength = 1e-7;
-        %         optimizer.RelaxationFactor = 0.6;
+%         % (for RegularStepGradientDescent)
+%         [optimizer, metric] = imregconfig('monomodal');
+%         optimizer.GradientMagnitudeTolerance = 1e-7;
+%         optimizer.MaximumIterations = 300;
+%         optimizer.MaximumStepLength = 1e-5;
+%         optimizer.MinimumStepLength = 1e-7;
+%         optimizer.RelaxationFactor = 0.6;
 
         % (first pass: rigid transform to day 1)
         % (increasing the PyramidLevels made the biggest improvement)
         disp('Rigid aligning images...')
-        im_ref = im_unaligned{1};
+        im_ref = im_unaligned_norm{1};
         im_aligned = nan(ref_size(1),ref_size(2),length(im_unaligned));
         tform_matrix = cell(size(im_unaligned));
         for curr_im = 1:length(im_unaligned)
-            im_tform = imregtform(im_unaligned{curr_im}, ...
+            im_tform = imregtform(im_unaligned_norm{curr_im}, ...
                 im_ref,'rigid',optimizer,metric,'PyramidLevels',5);
             curr_im_reg = imwarp(im_unaligned{curr_im}, ...
                 im_tform,'Outputview',imref2d(ref_size));
