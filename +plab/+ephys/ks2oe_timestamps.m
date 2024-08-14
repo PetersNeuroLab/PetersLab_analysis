@@ -1,5 +1,5 @@
-function ks2oe_timestamps(ks_spike_times_fn,oe_samples_fn,sample_rate)
-% ks2oe_timestamps(ks_spike_times_fn,oe_samples_fn,oe_metadata_fn)
+function ks2oe_timestamps(ks_spike_times_fn,oe_samples_fns,sample_rate)
+% ks2oe_timestamps(ks_spike_times_fn,oe_samples_fns,oe_metadata_fn)
 %
 % Convert kilosort spike times to open ephys times.
 %
@@ -14,17 +14,30 @@ function ks2oe_timestamps(ks_spike_times_fn,oe_samples_fn,sample_rate)
 % on the fly. For this reason, the timestamps aren't used - instead, the
 % samples are used, and the sample rate is assumed to be exact.
 %
+% Open Ephys samples can start from arbitrary number: the digital sync
+% signals correspond to the same numbers, so nothing needs correcting
+%
 % Inputs:
 % ks_spike_times_fn - filename for Kilosort spike times (spike_times.npy)
-% oe_samples_fn - filename for Open Ephys samples (sample_numbers.npy)
+% oe_samples_fns - filename for Open Ephys samples (sample_numbers.npy)
+% (can be multiple filenames if multiple recordings: if so, assume OE
+% sample numbers are continuous)
 % sample_rate - sample rate (ideally from Open Ephys metadata structure.oebin)
 %
 % Outputs:
 % Saves spike_times_openephys.npy (in same folder as spike_times.npy)
 
-% Load in Kilosort spike times, Open Ephys samples, Open Ephys metadata
+% Load Kilosort spike times, Open Ephys samples
 ks_spike_samples = readNPY(ks_spike_times_fn) + 1; % convert to 1-index
-oe_samples = readNPY(oe_samples_fn);
+
+% Load Open Ephys samples
+% (multiple files = multiple recordings, in this case just concatenate
+% because OE keeps samples running as long as preview is continuous)
+oe_samples_split = cell(size(oe_samples_fns));
+for curr_recording = 1:length(oe_samples_fns)
+    oe_samples_split{curr_recording} = readNPY(oe_samples_fns{curr_recording});
+end
+oe_samples = vertcat(oe_samples_split{:});
 
 % Get timestamps by indexing Open Ephys samples as Kilosort samples and
 % dividing by sample rate
