@@ -174,45 +174,54 @@ switch align_type
     case 'new_animal'
         %% Create across-animal alignment for animal to master VFS
 
-        if ~isempty(im_unaligned)
-            error('New animal alignment: unaligned images are entered, but none are expected (vfs loaded automatically)');
-        end
+        % Align VFS to master VFS by default, or use manual if input
+        if (~exist('master_align') || isempty(master_align)) && isempty(im_unaligned)
+            % Align master VFS if no master image provided
 
-        if ~exist('master_align') || isempty(master_align)
-            % Align master VFS by default
-            disp('Aligning animal VFS to master VFS...')
             % Load master VFS
+            disp('Aligning animal VFS to master VFS...')
             master_vfs_fn = fullfile(alignment_path,'master_vfs.mat');
             load(master_vfs_fn);
             master_align = master_vfs;
-        else
-            disp('Aligning animal image to master image')
+
+            % Load pre-saved retinotopy
+            retinotopy_fn = fullfile(alignment_path,'retinotopy', ...
+                sprintf('retinotopy_%s.mat',animal));
+            if exist(retinotopy_fn,'file')
+                load(retinotopy_fn);
+            else
+                error('No retinotopy saved: %s',animal);
+            end
+
+            % Align VFS across days
+            aligned_vfs = cell(length(retinotopy.vfs),1);
+            for curr_day = 1:length(retinotopy.vfs)
+                aligned_vfs{curr_day} = plab.wf.wf_align(retinotopy.vfs{curr_day}, ...
+                    retinotopy.animal,retinotopy.day{curr_day},'day_only');
+            end
+
+            % Plot day-aligned VFS
+            ap.imscroll(cat(3,aligned_vfs{:}));
+            colormap(ap.colormap('BWR'));clim([-1,1]);
+            axis image off;
+            title('Day-aligned VFS')
+
+            % Align across-day mean VFS to master animal
+            im_unaligned = nanmean(cat(3,aligned_vfs{:}),3);
+
+        elseif (~exist('master_align') || isempty(master_align)) && ~isempty(im_unaligned)
+            % If no master is provided but unaligned images are input,
+            % error (should load unaligned automatically above)
+            error('New animal alignment: unaligned images are entered, but none are expected (vfs loaded automatically)');
+
+        elseif ~isempty(master_align) && ~isempty(im_unaligned)
+            % If master and unaligned is provided, align those
+            disp('Aligning animal image to input master image')
+
+        elseif ~isempty(master_align) && isempty(im_unaligned)
+            % If master provided but no unaligned image, error
+            error('No unaligned image is provided - needed when master image is specified');
         end
-
-        % Load pre-saved retinotopy
-        retinotopy_fn = fullfile(alignment_path,'retinotopy', ...
-            sprintf('retinotopy_%s.mat',animal));
-        if exist(retinotopy_fn,'file')
-            load(retinotopy_fn);
-        else
-            error('No retinotopy saved: %s',animal);
-        end
-
-        % Align VFS across days
-        aligned_vfs = cell(length(retinotopy.vfs),1);
-        for curr_day = 1:length(retinotopy.vfs)
-            aligned_vfs{curr_day} = plab.wf.wf_align(retinotopy.vfs{curr_day}, ...
-                retinotopy.animal,retinotopy.day{curr_day},'day_only');
-        end
-
-        % Plot day-aligned VFS
-        ap.imscroll(cat(3,aligned_vfs{:}));
-        colormap(ap.colormap('BWR'));clim([-1,1]);
-        axis image off;
-        title('Day-aligned VFS')
-
-        % Align across-day mean VFS to master animal
-        im_unaligned = nanmean(cat(3,aligned_vfs{:}),3);
 
         % Align animal image to master image
         ref_size = size(master_align);
@@ -237,14 +246,14 @@ switch align_type
         nexttile;
         imagesc(master_align);
         axis image off
-        clim([-1,1]);
+        clim(max(abs(clim)).*[-1,1]);
         colormap(ap.colormap('BWR'));
         ap.wf_draw('ccf',[0.5,0.5,0.5]);
         title('Master')
         nexttile;
         imagesc(im_aligned);
         axis image off
-        clim([-1,1]);
+        clim(max(abs(clim)).*[-1,1]);
         colormap(ap.colormap('BWR'));
         ap.wf_draw('ccf',[0.5,0.5,0.5]);
         title('Aligned')

@@ -38,8 +38,12 @@ multi_frame_grab_timethresh = frame_interval/2;
 for curr_longframe = reshape(long_frametime_idx,1,[])
 
     % Get the next pair of frames collected with a normal interval
-    next_normal_interval = curr_longframe + ...
-        find(frame_upload_time_diff(curr_longframe:end) > frame_interval*0.9,1) - 1;
+    normal_interval_leeway = 0.1; % fraction of normal frame interval
+    normal_interval = frame_interval.*(1+[-1,1].*normal_interval_leeway);
+ 
+    next_normal_interval = curr_longframe +  find( ...
+        frame_upload_time_diff(curr_longframe:end) >= normal_interval(1) & ...
+        frame_upload_time_diff(curr_longframe:end) <= normal_interval(2),1) - 1;
 
     % Get number of frames skipped (expected from time minus collected)
     % across adjoining abnormal frame times
