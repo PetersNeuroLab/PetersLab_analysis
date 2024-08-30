@@ -76,23 +76,23 @@ switch align_type
         im_unaligned_norm = cellfun(@(x) imgaussfilt(x,2)./imgaussfilt(x,10),im_unaligned,'uni',false);
 
         % >> Set transform optimizer:
-        % (for OnePlusOneEvolutionary)
-        [optimizer, metric] = imregconfig('monomodal');
-        optimizer = registration.optimizer.OnePlusOneEvolutionary();
-        optimizer.MaximumIterations = 200;
-        optimizer.GrowthFactor = 1+1e-7;
-        optimizer.InitialRadius = 1e-4;
-        optimizer.Epsilon = 1.5e-5;
-
-%         % (for RegularStepGradientDescent)
+%         % (for OnePlusOneEvolutionary)
 %         [optimizer, metric] = imregconfig('monomodal');
-%         optimizer.GradientMagnitudeTolerance = 1e-7;
-%         optimizer.MaximumIterations = 300;
-%         optimizer.MaximumStepLength = 1e-5;
-%         optimizer.MinimumStepLength = 1e-7;
-%         optimizer.RelaxationFactor = 0.6;
+%         optimizer = registration.optimizer.OnePlusOneEvolutionary();
+%         optimizer.MaximumIterations = 200;
+%         optimizer.GrowthFactor = 1+1e-7;
+%         optimizer.InitialRadius = 1e-4;
+%         optimizer.Epsilon = 1.5e-5;
 
-        % (first pass: rigid transform to day 1)
+        % (for RegularStepGradientDescent)
+        [optimizer, metric] = imregconfig('monomodal');
+        optimizer.GradientMagnitudeTolerance = 1e-7;
+        optimizer.MaximumIterations = 300;
+        optimizer.MaximumStepLength = 1e-3;
+        optimizer.MinimumStepLength = 1e-7;
+        optimizer.RelaxationFactor = 0.6;
+
+        % Align images to day 1
         % (increasing the PyramidLevels made the biggest improvement)
         disp('Rigid aligning images...')
         im_ref = im_unaligned_norm{1};
