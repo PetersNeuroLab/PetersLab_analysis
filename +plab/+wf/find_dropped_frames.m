@@ -10,6 +10,7 @@ function [dropped_frames,dropped_frame_idx] = find_dropped_frames(widefield_meta
 % [Outputs] 
 % dropped_frames: fractional index of dropped frame (e.g. 25.5)
 % dropped_frame_idx: boolean vector of dropped frames
+% delayed_frames: frames that were delayed from normal frame rate
 
 if ~exist('plot_flag','var') || isempty(plot_flag)
     plot_flag = true;
@@ -26,7 +27,7 @@ frame_upload_time_diff = seconds(diff(frame_upload_time));
 
 % Find where upload time was > 1.5x mean (= skipped a frame)
 frame_interval = median(frame_upload_time_diff);
-long_frametime_idx = find(frame_upload_time_diff > frame_interval*1.5) + 1;
+delayed_frames = find(frame_upload_time_diff > frame_interval*1.5) + 1;
 
 % For each skipped frame: check if the correct number was uploaded 
 % (e.g. get expected frames by time from the anomaly to the next normal
@@ -34,8 +35,7 @@ long_frametime_idx = find(frame_upload_time_diff > frame_interval*1.5) + 1;
 % (record dropped frames as fractional frame indicies)
 dropped_frames = nan(1,0);
 
-multi_frame_grab_timethresh = frame_interval/2;
-for curr_longframe = reshape(long_frametime_idx,1,[])
+for curr_longframe = reshape(delayed_frames,1,[])
 
     % Get the next pair of frames collected with a normal interval
     normal_interval_leeway = 0.1; % fraction of normal frame interval
