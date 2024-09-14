@@ -34,22 +34,27 @@ delayed_frames = find(frame_upload_time_diff > frame_interval*1.5) + 1;
 % time, check if all frames are accounted for or if any are missing)
 % (record dropped frames as fractional frame indicies)
 dropped_frames = nan(1,0);
-
+last_frame_checked = 0;
 for curr_longframe = reshape(delayed_frames,1,[])
+
+    % If the current long frame fell within last checked, skip
+    if curr_longframe <= last_frame_checked
+        continue
+    end
 
     % Get the next pair of frames collected with a normal interval
     normal_interval_leeway = 0.1; % fraction of normal frame interval
     normal_interval = frame_interval.*(1+[-1,1].*normal_interval_leeway);
  
-    next_normal_interval = curr_longframe +  find( ...
+    next_normal_interval_frame = curr_longframe +  find( ...
         frame_upload_time_diff(curr_longframe:end) >= normal_interval(1) & ...
         frame_upload_time_diff(curr_longframe:end) <= normal_interval(2),1) - 1;
 
     % Get number of frames skipped (expected from time minus collected)
     % across adjoining abnormal frame times
     n_dropped_frames = ...
-        round(sum(frame_upload_time_diff(curr_longframe-1:next_normal_interval-1))/frame_interval) - ...
-        (length(curr_longframe-1:next_normal_interval-1));
+        round(sum(frame_upload_time_diff(curr_longframe-1:next_normal_interval_frame-1))/frame_interval) - ...
+        (length(curr_longframe-1:next_normal_interval_frame-1));
 
     if n_dropped_frames > 0
         dropped_frame_linspace = linspace(curr_longframe,curr_longframe+1,2+n_dropped_frames)';
@@ -59,6 +64,8 @@ for curr_longframe = reshape(delayed_frames,1,[])
         error('Widefield dropped frame incorrectly estimated')
     end
 
+    % Update the last frame checked
+    last_frame_checked = next_normal_interval_frame;
 end
 
 % Make boolean array of dropped frames
