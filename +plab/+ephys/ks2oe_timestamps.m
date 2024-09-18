@@ -31,13 +31,29 @@ function ks2oe_timestamps(ks_spike_times_fn,oe_samples_fns,sample_rate)
 ks_spike_samples = readNPY(ks_spike_times_fn) + 1; % convert to 1-index
 
 % Load Open Ephys samples
-% (multiple files = multiple recordings, in this case just concatenate
-% because OE keeps samples running as long as preview is continuous)
-oe_samples_split = cell(size(oe_samples_fns));
-for curr_recording = 1:length(oe_samples_fns)
-    oe_samples_split{curr_recording} = readNPY(oe_samples_fns{curr_recording});
+oe_samples_split = cellfun(@readNPY,oe_samples_fns,'uni',false);
+
+% Check for clock resets on multiple recordings
+oe_recording_clock_reset = ...
+    find(cellfun(@(x) x(1),oe_samples_split(2:end)) - ...
+    cellfun(@(x) x(end),oe_samples_split(1:end-1)) < 0) + 1;
+
+if ~any(oe_recording_clock_reset)
+    % Single recording or no clock resets: just concatenate
+    oe_samples = vertcat(oe_samples_split{:});
+else
+    % Multiple recordings with clock reset (stop/start preview): make
+    % pseudo-continuous by adding last sample of one recording to first sample
+    % of next recording
+    oe_samples_split_pseudocontinuous = oe_samples_split;
+    oe_samples_split_pseudocontinuous(oe_recording_clock_reset) = ...
+        cellfun(@(reset_samples,previous_sample) ...
+        reset_samples + previous_sample, ...
+        oe_samples_split(oe_recording_clock_reset), ...
+        cellfun(@(x) x(end),oe_samples_split(oe_recording_clock_reset-1),'uni',false), ...
+        'uni',false);
+    oe_samples = vertcat(oe_samples_split_pseudocontinuous{:});
 end
-oe_samples = vertcat(oe_samples_split{:});
 
 % Get timestamps by indexing Open Ephys samples as Kilosort samples and
 % dividing by sample rate
