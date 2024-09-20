@@ -6,7 +6,10 @@ classdef locations
         %% Set common lab locations
 
         % NAS server location
-        server_path = '\\qnap-ap001.dpag.ox.ac.uk\APlab\';
+%         server_path = '\\qnap-ap001.dpag.ox.ac.uk\APlab\';
+        %%%% TEMPORARY BACKUP WHILE SERVER IS DOWN
+        server_path = '\\qnap-ap002.dpag.ox.ac.uk\';
+
         server_data_path = fullfile(plab.locations.server_path,'Data');
 
         % Ports for tcp servers and clients
