@@ -21,7 +21,9 @@ for curr_day = 1:length(recordings_wf)
         vfs = plab.wf.retinotopy_vfs(animal,rec_day,rec_time);
         vfs_all{curr_day} = vfs;
     catch me
-        % If there's an error, skip to next day
+        % If there's an error, remove day and skip to next
+        warning('%s %s %s: error processing retinotopy, omitting', ...
+            animal,rec_day,rec_time);
         continue
     end
 end
@@ -31,12 +33,13 @@ retinotopy_fn = fullfile(plab.locations.server_path, ...
     'Lab','widefield_alignment','retinotopy', ...
     sprintf('retinotopy_%s.mat',animal));
 
+% (only keep data with filled VFS)
 use_recordings = cellfun(@(x) ~isempty(x),vfs_all);
 
 retinotopy = struct;
 retinotopy.animal = animal;
 retinotopy.day = {recordings(use_recordings).day};
-retinotopy.vfs = vfs_all;
+retinotopy.vfs = vfs_all(use_recordings);
 
 save(retinotopy_fn,'retinotopy');
 fprintf('Saved %s\n',retinotopy_fn);
