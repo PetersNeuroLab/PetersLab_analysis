@@ -5,10 +5,7 @@ function [U_master,V_master] = u2master(U,V)
 % (loads U_master, changes basis for V's)
 
 % Load master U
-master_U_fn = fullfile(plab.locations.server_path,'Lab', ...
-    'widefield_alignment','U_master.mat');
-
-load(master_U_fn);
+plab.wf.load_master_U;
 
 % Change V basis set from U to U_master
 V_master = plab.wf.change_U(U,V,U_master);
