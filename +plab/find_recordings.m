@@ -5,8 +5,8 @@ function recordings = find_recordings(animal,recording_day,workflow)
 %
 % Input:
 % recording_day - (as 'yyyy-mm-yy'), can be multiple in a cell array
-% workflow - can be multiple (e.g. {'thisone','thatone'}), can include * as
-% wildcard (e.g. 'this*' will return 'thisone').
+% workflow - can be multiple (e.g. {'taskA','taskB'}), can include * as
+% wildcard (e.g. 'task*' will return both 'taskA' and 'taskB').
 %
 %  - if only animal defined: find all recordings across all days
 %  - if animal & day defined: find all recordings within one day
@@ -14,6 +14,7 @@ function recordings = find_recordings(animal,recording_day,workflow)
 %
 % Output:
 % recordings (struct: length = n days):
+% .animal - animal
 % .day - day of recording
 % .recording - recording folder name(s) (time as HHMM)
 % .index - index(ies) of recording within day (e.g. 3rd recording is [3])
@@ -65,7 +66,8 @@ end
 
 %% Find and package matching recordings
 
-struct_fieldnames = {'day','index','recording','workflow', ...
+struct_fieldnames = ...
+    {'animal','day','index','recording','workflow', ...
     'mousecam','widefield','ephys'};
 recordings = cell2struct(cell(length(struct_fieldnames),0),struct_fieldnames);
 
@@ -119,6 +121,7 @@ if ~isempty(recording_day)
         recording_idx = length(recordings) + 1;
 
         % (basic info)
+        recordings(recording_idx).animal = animal;
         recordings(recording_idx).day = curr_day;
         recordings(recording_idx).index = find(use_recordings);
         recordings(recording_idx).recording = ...
