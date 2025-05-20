@@ -42,16 +42,14 @@ for curr_longframe = reshape(delayed_frames,1,[])
         continue
     end
 
-    % Get the next starting run of frames collected with a normal interval
+    % Get the next pair of frames collected with a normal interval
     normal_interval_leeway = 0.1; % fraction of normal frame interval
     normal_interval = frame_interval.*(1+[-1,1].*normal_interval_leeway);
-    normal_upload_times = ...
+    normal_frametimes = 
+ 
+    next_normal_interval_frame = curr_longframe +  find( ...
         frame_upload_time_diff(curr_longframe:end) >= normal_interval(1) & ...
-        frame_upload_time_diff(curr_longframe:end) <= normal_interval(2);
-
-    n_normal_frames = 3; % number of normal frames to consider back on track
-    next_normal_interval_frame = curr_longframe + ...
-        find(movsum(normal_upload_times,[0,n_normal_frames]) >= n_normal_frames,1) - 1;
+        frame_upload_time_diff(curr_longframe:end) <= normal_interval(2),1) - 1;
 
     % Get number of frames skipped (expected from time minus collected)
     % across adjoining abnormal frame times
