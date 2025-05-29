@@ -30,13 +30,17 @@ frame_timestamps = datetime( ...
     curr_metadata(4,:),curr_metadata(5,:),curr_metadata(6,:), ...
     curr_metadata(7,:),curr_metadata(8,:),curr_metadata(9,:));
 
+% Open file for reading (error out if file not found)
+data_fn = fullfile(data_path,sprintf('widefield_%s_data.bin',rec_time));
+if ~exist(data_fn,'file')
+    error('File not found (moved to tape?): %s',data_fn);
+end
+gui_data.data_fid = fopen(data_fn,'r');
+
 %% Load images (if frames specified)
 
 if isnumeric(frames)
-    % Open file for reading
-    data_fn = fullfile(data_path,sprintf('widefield_%s_data.bin',rec_time));
-    data_fid = fopen(data_fn,'r');
-
+   
     % Load all selected frames
     im = zeros([im_size,length(frames)],'uint16');
     for curr_frame_idx = 1:length(frames)
@@ -44,12 +48,13 @@ if isnumeric(frames)
         fseek(data_fid,curr_frame_location,-1);
         im(:,:,curr_frame_idx) = reshape(fread(data_fid,prod(im_size),'uint16=>uint16'),im_size);
     end
+    
 end
 
 
 %% Set up GUI (if frames='scroll');
 
-if strcmp(frames,'scroll')
+if strcmp(frames,'scroll')   
 
     % Create figure for scrolling and ROIs
     gui_fig = figure;
@@ -57,10 +62,6 @@ if strcmp(frames,'scroll')
         'WindowScrollWheelFcn',{@im_change, gui_fig}, ...
         'closeRequestFcn',{@close_gui,gui_fig});
     gui_data = struct;
-
-    % Open file for reading
-    data_fn = fullfile(data_path,sprintf('widefield_%s_data.bin',rec_time));
-    gui_data.data_fid = fopen(data_fn,'r');
 
     % Store image info
     if ~exist('scroll_color','var')

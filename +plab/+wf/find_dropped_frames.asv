@@ -51,7 +51,7 @@ for curr_longframe = reshape(delayed_frames,1,[])
 
     n_normal_frames = 3; % number of normal frames to consider back on track
     next_normal_interval_frame = curr_longframe + ...
-        find(movsum(normal_upload_times,[0,n_normal_frames-1]) >= n_normal_frames,1);
+        find(movsum(normal_upload_times,[0,n_normal_frames-1]) >= n_normal_frames,1) - 1;
 
     % Get number of frames skipped (expected from time minus collected)
     % across adjoining abnormal frame times
