@@ -35,7 +35,8 @@ data_fn = fullfile(data_path,sprintf('widefield_%s_data.bin',rec_time));
 if ~exist(data_fn,'file')
     error('File not found (moved to tape?): %s',data_fn);
 end
-gui_data.data_fid = fopen(data_fn,'r');
+data_fid = fopen(data_fn,'r');
+
 
 %% Load images (if frames specified)
 
@@ -64,6 +65,7 @@ if strcmp(frames,'scroll')
     gui_data = struct;
 
     % Store image info
+    gui_data.data_fid = data_fid;
     if ~exist('scroll_color','var')
         scroll_color = [1,1];
     end
