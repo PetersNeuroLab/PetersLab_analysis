@@ -5,6 +5,9 @@
 % - Moves from local to server:
 %       -> day-specific folders in day/widefield
 %       -> protocol-specific folders in day/protocol/widefield
+%
+% To re-SVD: this can be run from any computer if the animal/day/widefield
+% folder is copied into `plab.locations.local_data_path`
 
 %% Find folders with data
 
