@@ -117,7 +117,7 @@ end
 
 %% Move raw data to server
 
-local_ephys_path = fullfile(data_path,'Record Node 101');
+local_ephys_path = fullfile(data_path,'Record Node 101','*');
 
 disp('Moving raw data to server...');
 [status,message] = movefile(local_ephys_path,server_ephys_path);
