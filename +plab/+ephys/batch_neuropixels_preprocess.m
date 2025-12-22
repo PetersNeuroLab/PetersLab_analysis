@@ -5,7 +5,7 @@
 oe_data_paths = string({dir(fullfile(plab.locations.local_data_path, ...
     '/**/','Record Node*')).folder});
 
-oe_data_paths = oe_data_paths(1);
+oe_data_paths = oe_data_paths(3);
 
 for curr_oe_data_path = oe_data_paths
 
@@ -20,7 +20,6 @@ for curr_oe_data_path = oe_data_paths
     plab.ephys.neuropixels_preprocess(animal,day,curr_oe_data_path);
 
 end
-
 
 %%%% TO DO: clean up empty folders
 
