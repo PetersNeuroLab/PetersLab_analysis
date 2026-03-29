@@ -16,15 +16,14 @@ kilosort_python_environment = pyenv('Version',kilosort_environment_path,'Executi
 %% Get paths and filenames
 
 % Get Open Ephys probe info
-% (NOTE: NOT YET UPDATED TO GRAB INFO FROM >1 PROBE)
 oe_settings_dir = dir(fullfile(data_path,'/**/','settings.xml'));
-probe_info = plab.ephys.oe_probe_info(fullfile(oe_settings_dir.folder,oe_settings_dir.name));
+probe = plab.ephys.oe_probe_info(fullfile(oe_settings_dir.folder,oe_settings_dir.name));
 
 % Get ephys recording paths
 % OneBox conventions: 
-% - Neuropixels 1.0 split into -AP/-LFP, 2.0 broadband without suffix
-% - all probes have -ADC data folder
-% - multiple probes: stored by letter as Probe[A,B...]
+% Neuropixels 1.0 split into -AP/-LFP, 2.0 broadband without suffix
+% All probes have -ADC data
+% Multiple probes: stored by letter as Probe[A,B...]
 data_dir = dir(fullfile(data_path,'/**/','continuous.dat'));
 recording_paths = string({data_dir(~contains({data_dir.folder},{'ADC','LFP'},'IgnoreCase',true)).folder});
 
@@ -65,24 +64,21 @@ for curr_recording_idx = 1:length(recording_paths)
         error('No AP-band data: %s %s',animal,day)
     end
 
+    % Get probe info from Open Ephys settings file
+    %%%%%%%%%%%%%%%%% WORKING HERE
+    probe = plab.ephys.oe_probe_info(oe_settings_fn);
+  
     %% Run kilosort
 
     % Run common average referencing (CAR)
-    probe_version = sscanf(probe_info.probe_type,'%*s%d%*s');
     apband_car_local_filename = fullfile(curr_save_path,sprintf('%s_%s_apband_car.dat',animal,day));
-    ap.ephys_car(ap_data_filename,apband_car_local_filename,probe_version)
+    ap.ephys_car(ap_data_filename,apband_car_local_filename)
 
     % Run Kilsort 4
-    % (include probe geometry from Open Ephys)
     disp('Running Kilosort 4...');
     pyrunfile('AP_run_kilosort4.py', ...
         data_filename = apband_car_local_filename, ...
-        kilosort_output_path = curr_save_path, ...
-        chanMap = probe_info.chanMap, ...
-        xc = probe_info.xc, ...
-        yc = probe_info.yc, ...
-        kcoords = probe_info.kcoords, ...
-        n_chan = int32(probe_info.n_chan));
+        kilosort_output_path = curr_save_path);
 
     % Terminate Python process
     terminate(kilosort_python_environment);

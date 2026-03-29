@@ -1,11 +1,10 @@
-
+% Batch preprocess Neuropixels data
+% (is this not what's on the ephys computer? seemed outdated)
 
 % Find animals with ephys data
 % (find Open Ephys record node folders)
 oe_data_paths = string({dir(fullfile(plab.locations.local_data_path, ...
     '/**/','Record Node*')).folder});
-
-oe_data_paths = oe_data_paths(3);
 
 for curr_oe_data_path = oe_data_paths
 
