@@ -68,9 +68,8 @@ for curr_recording_idx = 1:length(recording_paths)
     %% Run kilosort
 
     % Run common average referencing (CAR)
-    probe_version = sscanf(probe_info.probe_type,'%*s%d%*s');
     apband_car_local_filename = fullfile(curr_save_path,sprintf('%s_%s_apband_car.dat',animal,day));
-    ap.ephys_car(ap_data_filename,apband_car_local_filename,probe_version)
+    ap.ephys_car(ap_data_filename,apband_car_local_filename,probe_info)
 
     % Run Kilsort 4
     % (include probe geometry from Open Ephys)
