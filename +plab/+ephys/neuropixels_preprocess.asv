@@ -17,27 +17,33 @@ kilosort_python_environment = pyenv('Version',kilosort_environment_path,'Executi
 
 % Get Open Ephys probe info
 oe_settings_dir = dir(fullfile(data_path,'/**/','settings.xml'));
-probe = plab.ephys.oe_probe_info(fullfile(oe_settings_dir.folder,oe_settings_dir.name));
+probe_info = plab.ephys.oe_probe_info(fullfile(oe_settings_dir.folder,oe_settings_dir.name));
 
-% Get ephys recording paths
-% OneBox conventions: 
-% Neuropixels 1.0 split into -AP/-LFP, 2.0 broadband without suffix
-% All probes have -ADC data
-% Multiple probes: stored by letter as Probe[A,B...]
+% Get all data paths (continuous.dat)
 data_dir = dir(fullfile(data_path,'/**/','continuous.dat'));
-recording_paths = string({data_dir(~contains({data_dir.folder},{'ADC','LFP'},'IgnoreCase',true)).folder});
+data_paths = {data_dir.folder}';
 
-% Set local save paths
+% Get paths following Open Ephys conventions: 
+% \experimentN : incremented whenever ACQUISITION is stopped (resets sample numbers/timestamps)
+% |-> \recordingN : incremented when RECORDING is stopped (continuous sample numbers / timestamps)
+%     |-> \continuous : data
+%         |-> [Neuropix-PIX/OneBox]-NNN.Probe[A,B...] : One folder per probe, lettered
+%                                                       NPX1.0: split into -AP and -LFP folders by band
+%                                                       NPX2.0: broadband in one folder
+oe_experiments = unique(regexprep(data_paths, '.*experiment(\d*).*', '$1'));
+oe_recordings = unique(regexprep(data_paths, '.*recording(\d*).*', '$1'));
+oe_probes = unique(regexprep(data_paths, '.*Probe([A-Z]).*', '$1'));
+
+% Set local save path(s)
 local_kilosort_path = plab.locations.filename('local',animal,day,[],'ephys','kilosort4');
 
-% (probe_n = multi-probe, site_n = serial sites)
-if isscalar(recording_paths)
-    % Single probe
+if isscalar(oe_probes)
+    % (single probe: no subfolders)
     save_paths = string(local_kilosort_path);
 else
-    % Multiple probes
+    % (multiple probes: subfolders probe_N)
     save_paths = arrayfun(@(x) string(fullfile(local_kilosort_path, ...
-        sprintf('probe_%d',x))),1:length(recording_paths));
+        sprintf('probe_%d',x))),(1:length(oe_probes))');
 end
 
 % Set server paths
@@ -47,12 +53,17 @@ if ~exist(server_ephys_path,'dir')
 end
 
 
-%% Run kilosort on all datasets
+%% Run kilosort on all probes
 
-for curr_recording_idx = 1:length(recording_paths)
+for curr_probe = 1:length(oe_probes)
 
-    curr_recording_path = recording_paths(curr_recording_idx);
-    curr_save_path = save_paths(curr_recording_idx);
+    % Find all AP/broadband recordings on single probe
+    ap_data_paths = data_paths
+    contains(data_paths,['Probe',oe_probes{curr_probe}]) & ...
+        ~contains(data_paths,'
+
+    curr_recording_path = recording_paths(curr_probe);
+    curr_save_path = save_paths(curr_probe);
 
     if ~exist(curr_save_path,'dir')
         mkdir(curr_save_path)
@@ -64,21 +75,23 @@ for curr_recording_idx = 1:length(recording_paths)
         error('No AP-band data: %s %s',animal,day)
     end
 
-    % Get probe info from Open Ephys settings file
-    %%%%%%%%%%%%%%%%% WORKING HERE
-    probe = plab.ephys.oe_probe_info(oe_settings_fn);
-  
     %% Run kilosort
 
     % Run common average referencing (CAR)
     apband_car_local_filename = fullfile(curr_save_path,sprintf('%s_%s_apband_car.dat',animal,day));
-    ap.ephys_car(ap_data_filename,apband_car_local_filename)
+    ap.ephys_car(ap_data_filename,apband_car_local_filename,probe_info)
 
     % Run Kilsort 4
+    % (include probe geometry from Open Ephys)
     disp('Running Kilosort 4...');
     pyrunfile('AP_run_kilosort4.py', ...
         data_filename = apband_car_local_filename, ...
-        kilosort_output_path = curr_save_path);
+        kilosort_output_path = curr_save_path, ...
+        chanMap = probe_info.chanMap, ...
+        xc = probe_info.xc, ...
+        yc = probe_info.yc, ...
+        kcoords = probe_info.kcoords, ...
+        n_chan = int32(probe_info.n_chan));
 
     % Terminate Python process
     terminate(kilosort_python_environment);

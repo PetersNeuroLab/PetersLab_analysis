@@ -1,5 +1,4 @@
 % Batch preprocess Neuropixels data
-% (is this not what's on the ephys computer? seemed outdated)
 
 % Find animals with ephys data (by Open Ephys structure.oebin files)
 oe_data_paths = unique(string( ...
@@ -20,7 +19,7 @@ for curr_oe_data_path = oe_data_paths
 
 end
 
-%%%% TO DO: clean up empty folders
+% >>> TO DO: clean up empty folders <<<
 
 
 

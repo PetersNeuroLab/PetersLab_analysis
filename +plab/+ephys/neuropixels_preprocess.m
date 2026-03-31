@@ -16,29 +16,34 @@ kilosort_python_environment = pyenv('Version',kilosort_environment_path,'Executi
 %% Get paths and filenames
 
 % Get Open Ephys probe info
-% (NOTE: NOT YET UPDATED TO GRAB INFO FROM >1 PROBE)
 oe_settings_dir = dir(fullfile(data_path,'/**/','settings.xml'));
 probe_info = plab.ephys.oe_probe_info(fullfile(oe_settings_dir.folder,oe_settings_dir.name));
 
-% Get ephys recording paths
-% OneBox conventions: 
-% - Neuropixels 1.0 split into -AP/-LFP, 2.0 broadband without suffix
-% - all probes have -ADC data folder
-% - multiple probes: stored by letter as Probe[A,B...]
+% Get all data paths (continuous.dat)
 data_dir = dir(fullfile(data_path,'/**/','continuous.dat'));
-recording_paths = string({data_dir(~contains({data_dir.folder},{'ADC','LFP'},'IgnoreCase',true)).folder});
+data_filenames = string(fullfile({data_dir.folder},{data_dir.name}))';
 
-% Set local save paths
+% Get paths following Open Ephys conventions: 
+% \experimentN : incremented whenever ACQUISITION is stopped (resets sample numbers/timestamps)
+% |-> \recordingN : incremented when RECORDING is stopped (continuous sample numbers / timestamps)
+%     |-> \continuous : data
+%         |-> [Neuropix-PIX/OneBox]-NNN.Probe[A,B...] : One folder per probe, lettered
+%                                                       NPX1.0: split into -AP and -LFP folders by band
+%                                                       NPX2.0: broadband in one folder
+oe_experiments = unique(regexprep(data_filenames, '.*experiment(\d*).*', '$1'));
+oe_recordings = unique(regexprep(data_filenames, '.*recording(\d*).*', '$1'));
+oe_probes = unique(regexprep(data_filenames, '.*Probe([A-Z]).*', '$1'));
+
+% Set local save path(s)
 local_kilosort_path = plab.locations.filename('local',animal,day,[],'ephys','kilosort4');
 
-% (probe_n = multi-probe, site_n = serial sites)
-if isscalar(recording_paths)
-    % Single probe
+if isscalar(oe_probes)
+    % (single probe: no subfolders)
     save_paths = string(local_kilosort_path);
 else
-    % Multiple probes
+    % (multiple probes: subfolders probe_N)
     save_paths = arrayfun(@(x) string(fullfile(local_kilosort_path, ...
-        sprintf('probe_%d',x))),1:length(recording_paths));
+        sprintf('probe_%d',x))),(1:length(oe_probes))');
 end
 
 % Set server paths
@@ -48,28 +53,31 @@ if ~exist(server_ephys_path,'dir')
 end
 
 
-%% Run kilosort on all datasets
+%% Run kilosort on all probes
 
-for curr_recording_idx = 1:length(recording_paths)
+for curr_probe = 1:length(oe_probes)
 
-    curr_recording_path = recording_paths(curr_recording_idx);
-    curr_save_path = save_paths(curr_recording_idx);
+    %% Set folders for processing and saving
 
+    % Find all AP/broadband recordings on single probe
+    curr_ap_data_path_idx = ...
+        contains(data_filenames,['Probe',oe_probes{curr_probe}]) & ... % From current probe
+        ~contains(data_filenames,{'LFP','ADC'});                       % AP/broadband (not LFP or ADC)
+    ap_data_filename = sort(data_filenames(curr_ap_data_path_idx));  % Ensure temporal order (expN>recN)
+
+    % Set/create save path
+    curr_save_path = save_paths(curr_probe);
     if ~exist(curr_save_path,'dir')
         mkdir(curr_save_path)
     end
 
-    % Get Open Ephys data filename(s)
-    ap_data_filename = fullfile(curr_recording_path,'continuous.dat');
-    if ~exist(ap_data_filename,'file')
-        error('No AP-band data: %s %s',animal,day)
-    end
-
-    %% Run kilosort
+    %% Common average reference
 
     % Run common average referencing (CAR)
     apband_car_local_filename = fullfile(curr_save_path,sprintf('%s_%s_apband_car.dat',animal,day));
     ap.ephys_car(ap_data_filename,apband_car_local_filename,probe_info)
+
+    %% Kilosort
 
     % Run Kilsort 4
     % (include probe geometry from Open Ephys)
@@ -89,13 +97,13 @@ for curr_recording_idx = 1:length(recording_paths)
     %% Convert spike times to Open Ephys timestamps
 
     % Get metadata filename (for sample rate: just use first file)
-    ephys_meta_fn = fullfile(fileparts(fileparts(curr_recording_path)),'structure.oebin');
-    ephys_metadata = jsondecode(fileread(ephys_meta_fn));
+    ephys_meta_fn = fullfile(fileparts(fileparts(fileparts(ap_data_filename))),'structure.oebin');
+    ephys_metadata = jsondecode(fileread(ephys_meta_fn(1)));
 
     % Convert kilosort "spike times" (samples) into timestamps
     % (if multiple files, create concatenated/consecutive sample numbers)
     ks_spike_times_fn = fullfile(curr_save_path,'spike_times.npy');
-    oe_ap_sample_fn = fullfile(curr_recording_path,'sample_numbers.npy');
+    oe_ap_sample_fn = fullfile(ap_data_filename,'sample_numbers.npy');
     
     plab.ephys.ks2oe_timestamps(ks_spike_times_fn,oe_ap_sample_fn, ...
         ephys_metadata(1).continuous(1).sample_rate);
