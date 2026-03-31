@@ -2,9 +2,9 @@
 % (is this not what's on the ephys computer? seemed outdated)
 
 % Find animals with ephys data (by Open Ephys structure.oebin files)
-oe_data_paths = string( ...
+oe_data_paths = unique(string( ...
     fileparts(fileparts({dir(fullfile( ...
-    plab.locations.local_data_path,'/**/','structure.oebin')).folder})));
+    plab.locations.local_data_path,'/**/','structure.oebin')).folder}))));
 
 for curr_oe_data_path = oe_data_paths
 
