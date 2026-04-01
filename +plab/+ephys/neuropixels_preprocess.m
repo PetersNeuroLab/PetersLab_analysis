@@ -33,9 +33,9 @@ data_filenames = string(fullfile({data_dir.folder},{data_dir.name}))';
 %         |-> [Neuropix-PIX/OneBox]-NNN.Probe[A,B...] : One folder per probe, lettered
 %                                                       NPX1.0: split into -AP and -LFP folders by band
 %                                                       NPX2.0: broadband in one folder
-oe_experiments = unique(regexprep(data_filenames, '.*experiment(\d*).*', '$1'));
-oe_recordings = unique(regexprep(data_filenames, '.*recording(\d*).*', '$1'));
-oe_probes = unique(regexprep(data_filenames, '.*Probe([A-Z]).*', '$1'));
+oe_experiments = unique(rmmissing(regexp(data_filenames,'(?<=experiment)\d', 'match', 'once')));
+oe_recordings = unique(rmmissing(regexp(data_filenames,'(?<=recording)\d', 'match', 'once')));
+oe_probes = unique(rmmissing(regexp(data_filenames, '(?<=Probe)[A-Z]', 'match', 'once')));
 
 % Set local save path(s)
 local_kilosort_path = plab.locations.filename('local',animal,day,[],'ephys','kilosort4');
@@ -106,7 +106,7 @@ for curr_probe = 1:length(oe_probes)
     % Convert kilosort "spike times" (samples) into timestamps
     % (if multiple files, create concatenated/consecutive sample numbers)
     ks_spike_times_fn = fullfile(curr_save_path,'spike_times.npy');
-    oe_ap_sample_fn = fullfile(ap_data_filename,'sample_numbers.npy');
+    oe_ap_sample_fn = fullfile(fileparts(ap_data_filename),'sample_numbers.npy');
     
     plab.ephys.ks2oe_timestamps(ks_spike_times_fn,oe_ap_sample_fn, ...
         ephys_metadata(1).continuous(1).sample_rate);

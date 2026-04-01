@@ -55,7 +55,7 @@ for curr_process_path_cell = process_paths
         wf_colors = {'blue','violet'};
         n_colors = length(wf_colors);
 
-        [U,V,im_avg] = plab.wf.preprocess_widefield(curr_process_path,n_colors);
+        [U,V,im_avg] = plab.wf.widefield_preprocess(curr_process_path,n_colors);
 
         %% Save preprocessed widefield data locally
 
@@ -173,20 +173,6 @@ for curr_process_path_cell = process_paths
 
         end
 
-        % Delete empty local folders
-        % (2 hierarchy levels: day > animal)
-        try
-            curr_hierarchy_path = curr_process_path;
-            for hierarchy_levels = 1:3
-                hierarchy_dir = dir(curr_hierarchy_path);
-                if all(contains({hierarchy_dir.name},'.'))
-                    rmdir(curr_hierarchy_path)
-                    % Move up one step in hierarchy
-                    curr_hierarchy_path = fileparts(curr_hierarchy_path);
-                end
-            end
-        end
-
         % Clean workspace for next loop
         clearvars('-except',preload_vars{:});
 
@@ -199,6 +185,20 @@ for curr_process_path_cell = process_paths
 
 end
 
+%% Remove empty folders/subfolders in local data path
+
+local_data_dir = dir(fullfile(plab.locations.local_data_path,'/**/'));
+
+all_folders = {local_data_dir.folder};
+file_folders = {local_data_dir(~[local_data_dir.isdir]).folder};
+
+empty_folder_idx = ~arrayfun(@(x) any(contains(file_folders,x)),all_folders);
+empty_folders = string(unique({local_data_dir(empty_folder_idx).folder}));
+
+[~,subfolder_sort] = sort(strlength(empty_folders),'descend');
+for curr_empty_folder = empty_folders(subfolder_sort)
+    rmdir(curr_empty_folder);
+end
 
 
 

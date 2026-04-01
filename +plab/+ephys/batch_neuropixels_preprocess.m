@@ -1,9 +1,13 @@
 % Batch preprocess Neuropixels data
 
+%% Find data to process
+
 % Find animals with ephys data (by Open Ephys structure.oebin files)
 oe_data_paths = unique(string( ...
     fileparts(fileparts({dir(fullfile( ...
     plab.locations.local_data_path,'/**/','structure.oebin')).folder}))));
+
+%% Process all data
 
 for curr_oe_data_path = oe_data_paths
 
@@ -19,7 +23,19 @@ for curr_oe_data_path = oe_data_paths
 
 end
 
-% >>> TO DO: clean up empty folders <<<
+%% Remove empty folders/subfolders in local data path
 
+local_data_dir = dir(fullfile(plab.locations.local_data_path,'/**/'));
+
+all_folders = {local_data_dir.folder};
+file_folders = {local_data_dir(~[local_data_dir.isdir]).folder};
+
+empty_folder_idx = ~arrayfun(@(x) any(contains(file_folders,x)),all_folders);
+empty_folders = string(unique({local_data_dir(empty_folder_idx).folder}));
+
+[~,subfolder_sort] = sort(strlength(empty_folders),'descend');
+for curr_empty_folder = empty_folders(subfolder_sort)
+    rmdir(curr_empty_folder);
+end
 
 

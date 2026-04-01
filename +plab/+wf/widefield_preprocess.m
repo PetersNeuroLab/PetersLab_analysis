@@ -1,5 +1,5 @@
-function [U,V,im_avg] = preprocess_widefield(data_path,n_colors)
-% [U,V,im_color_avg,frame_info] = preprocess_widefield_hamamatsu(im_files,color_split)
+function [U,V,im_avg] = widefield_preprocess(data_path,n_colors)
+% [U,V,im_color_avg,frame_info] = widefield_preprocess(im_files,color_split)
 %
 % SVD-compress widefield imaging from Hamamatsu ORCA-Flash 4.0 v3
 % Assumes:
