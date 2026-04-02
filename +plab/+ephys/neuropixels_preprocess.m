@@ -7,14 +7,15 @@ function neuropixels_preprocess(animal,day,data_path)
 fprintf('Preprocessing Neuropixels: %s %s\n',animal,day);
 
 %% Set path for kilosort python environment
-% (assume python is in user profile folder)
 
-% system_path = split(getenv("Path"),';');
-% anaconda_path = system_path{endsWith(system_path,'anaconda3')};
+system_path = split(getenv("Path"),';');
+anaconda_path = system_path{endsWith(system_path,'anaconda3')};
 
-anaconda_path = fullfile(getenv('USERPROFILE'),'anaconda3');
-kilosort_environment_path = fullfile(anaconda_path,'envs','kilosort','pythonw.exe');
-kilosort_python_environment = pyenv('Version',kilosort_environment_path,'ExecutionMode','OutOfProcess');
+kilosort_environment_path = fullfile(anaconda_path,'envs','kilosort');
+kilosort_python_exe = fullfile(kilosort_environment_path,'pythonw.exe');
+
+kilosort_python_environment = pyenv('Version',kilosort_python_exe,'ExecutionMode','OutOfProcess');
+
 
 %% Get paths and filenames
 
