@@ -33,9 +33,16 @@ file_folders = {local_data_dir(~[local_data_dir.isdir]).folder};
 empty_folder_idx = ~arrayfun(@(x) any(contains(file_folders,x)),all_folders);
 empty_folders = string(unique({local_data_dir(empty_folder_idx).folder}));
 
-[~,subfolder_sort] = sort(strlength(empty_folders),'descend');
-for curr_empty_folder = empty_folders(subfolder_sort)
-    rmdir(curr_empty_folder);
+if ~isempty(empty_folders)
+    [~,subfolder_sort] = sort(strlength(empty_folders),'descend');
+    for curr_empty_folder = empty_folders(subfolder_sort)
+        remove_success = rmdir(curr_empty_folder);
+        if remove_success
+            fprintf('Removed: %s\n',curr_empty_folder)
+        else
+            fprintf('Could not remove: %s\n',curr_empty_folder)
+        end
+    end
 end
 
 
