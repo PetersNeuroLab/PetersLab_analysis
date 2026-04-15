@@ -36,6 +36,10 @@ empty_folders = string(unique({local_data_dir(empty_folder_idx).folder}));
 if ~isempty(empty_folders)
     [~,subfolder_sort] = sort(strlength(empty_folders),'descend');
     for curr_empty_folder = empty_folders(subfolder_sort)
+        if strcmp(curr_empty_folder,plab.locations.local_data_path)
+           % Keep parent folder even if empty
+            continue
+        end
         remove_success = rmdir(curr_empty_folder);
         if remove_success
             fprintf('Removed: %s\n',curr_empty_folder)
