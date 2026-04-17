@@ -19,8 +19,9 @@ function recordings = find_recordings(animal,recording_day,workflow)
 % .recording - recording folder name(s) (time as HHMM)
 % .index - index(ies) of recording within day (e.g. 3rd recording is [3])
 % .workflow - Bonsai workflow(s)
-% .mousecam - whether mousecam was recorded for recording(s)
-% .widefield - whether widefield was recorded for recording(s)
+% .mousecam - logical for mousecam in recording(s)
+% .widefield - logical for widefield in recording(s)
+% .ephys - number of recorded probes in day
 %
 % e.g. recording(4).workflow{3}: the 3rd matching workflow from the 4th day
 % containing a matching recording.
@@ -128,15 +129,24 @@ if ~isempty(recording_day)
             strtok({curr_recording_paths(use_recordings).name},'Recording_');
         recordings(recording_idx).workflow = recording_workflows(use_recordings);
 
-        % (recording modalities - note ephys is day-, not recording-specific)
+        % (recording modalities)
+         
+        % (mousecam - logical by recording)
         recordings(recording_idx).mousecam = ...
             cellfun(@(x) any(exist(fullfile(curr_day_path,x,'mousecam'),'dir')), ...
             {curr_recording_paths(use_recordings).name});
+
+        % (widefield - logical by recording)
         recordings(recording_idx).widefield = ...
             cellfun(@(x) any(exist(fullfile(curr_day_path,x,'widefield'),'dir')), ...
             {curr_recording_paths(use_recordings).name});
+
+        % (ephys - number of recorded probes in day)
         recordings(recording_idx).ephys = ...
-            any(exist(fullfile(curr_day_path,'ephys'),'dir'));
+            length(unique(rmmissing(regexp( ...
+            {dir(fullfile(curr_day_path,'ephys','**','*Probe*')).name}, ...
+            '(?<=Probe)[A-Z]', 'match', 'once'))));
+
     end
 
     %% If no recording days, error out
