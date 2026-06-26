@@ -1,5 +1,5 @@
-function ks2oe_timestamps(ks_spike_times_fn,oe_samples_fns,sample_rate)
-% ks2oe_timestamps(ks_spike_times_fn,oe_samples_fns,oe_metadata_fn)
+function ks2oe_timestamps(ks_spike_times_fn,oe_samples_fns,sample_rate,overwrite)
+% ks2oe_timestamps(ks_spike_times_fn,oe_samples_fns,oe_metadata_fn,overwrite)
 %
 % 1) Convert kilosort spike times to Open Ephys times.
 % 2) Convert and save Open Ephys TTL timestamps
@@ -29,6 +29,7 @@ function ks2oe_timestamps(ks_spike_times_fn,oe_samples_fns,sample_rate)
 % (can be multiple filenames if multiple recordings: if so, assume OE
 % sample numbers are continuous)
 % sample_rate - sample rate (ideally from Open Ephys metadata structure.oebin)
+% overwrite - automatically overwrite (default false)
 %
 % Outputs - saves new files (in same folder as spike_times.npy): 
 % spike_times_openephys.npy 
@@ -40,14 +41,23 @@ function ks2oe_timestamps(ks_spike_times_fn,oe_samples_fns,sample_rate)
 spike_times_save_fn = fullfile(fileparts(ks_spike_times_fn),'spike_times_openephys.npy');
 open_ephys_ttl_save_fn = fullfile(fileparts(ks_spike_times_fn),'open_ephys_ttl.mat');
 
-% Confirm overwrite if save files exist
+% If files exist
 if (exist(spike_times_save_fn,'file') && exist(open_ephys_ttl_save_fn,'file'))
-    user_confirm = questdlg(sprintf('Overwrite Open Ephys spike/TTL timestamps? \n\n%s',fileparts(ks_spike_times_fn)));
-    if ~user_confirm
+    if ~exist('overwrite','var')
+        % If overwrite not specified, ask user
+        user_confirm = questdlg(sprintf('Overwrite Open Ephys spike/TTL timestamps? \n\n%s',fileparts(ks_spike_times_fn)));
+        if ~strcmp(user_confirm,'Yes')
+            return
+        end
+    elseif overwrite
+        % Overwrite: continue
+    elseif ~overwrite
+        % Don't overwrite: exit
         return
     end
 end
 
+fprintf('Converting spike/TTL times to timelite: %s\n',fileparts(ks_spike_times_fn));
 
 %% Create Open Ephys timestamps
 
@@ -60,12 +70,12 @@ oe_recording_clock_reset = ...
     cellfun(@(x) x(end),oe_samples_split(1:end-1)) < 0) + 1;
 
 if ~any(oe_recording_clock_reset)
-    % Single recording or no clock resets: just concatenate
+    % No clock resets: just concatenate
     oe_samples = vertcat(oe_samples_split{:});
 else
-    % Multiple recordings with clock reset (stop/start preview): make
-    % pseudo-continuous by adding last sample of one recording to first sample
-    % of next recording
+    % Clock reset (stop/start preview): 
+    % make pseudo-continuous by adding last sample of one recording to
+    % first sample of next recording
     oe_samples_split_pseudocontinuous = oe_samples_split;
     oe_samples_split_pseudocontinuous(oe_recording_clock_reset) = ...
         cellfun(@(reset_samples,previous_sample) ...
@@ -77,7 +87,7 @@ else
 end
 
 % Create expected time intervals for all samples (1/sample rate)
-oe_time_intervals = ones(size(oe_samples))/sample_rate;
+oe_time_intervals = double(vertcat(0,diff(oe_samples)))/sample_rate;
 
 % Check for Open Ephys dropped data, compensate in timestamps if any
 oe_bad_samples = plab.ephys.find_dropped_ephys(fileparts(oe_samples_fns{1}));
