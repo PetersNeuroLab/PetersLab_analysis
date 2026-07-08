@@ -142,10 +142,10 @@ if ~isempty(recording_day)
             {curr_recording_paths(use_recordings).name});
 
         % (ephys - number of recorded probes in day)
+        % (do this based on kilosort outputs, compensates for discontinuous
+        % recordings and various nested subfolders)
         recordings(recording_idx).ephys = ...
-            length(unique(rmmissing(regexp( ...
-            {dir(fullfile(curr_day_path,'ephys','**','*Probe*')).name}, ...
-            '(?<=Probe)[A-Z]', 'match', 'once'))));
+            length(dir(fullfile(curr_day_path,'ephys','**','spike_times.npy')));
 
     end
 
