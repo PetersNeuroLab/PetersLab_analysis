@@ -2,7 +2,8 @@ function probe_areas = grab_probe_areas(probe_vector)
 % probe_areas = grab_probe_areas(probe_vector)
 %
 % Grab CCF areas across histology probe trajectory
-% (currently assumes last labeled point is actual recording depth)
+% Returns same format as NTE (structure tree of boundary areas, plus some)
+% (assumes last labeled point is actual recording depth)
 
 % Load atlas
 [av,~,st] = ap_histology.load_ccf;
