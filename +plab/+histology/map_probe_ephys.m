@@ -37,7 +37,7 @@ ephys_paths_dayspit = arrayfun(@(curr_rec) ...
 ephys_paths = horzcat(ephys_paths_dayspit{:})';
 
 % Create gui
-gui_fig = uifigure('Name','Choose histology -> ephys mapping');
+gui_fig = uifigure('Name',sprintf('%s: set histology -> ephys mapping',animal));
 gui_grid = uigridlayout(gui_fig,[2,3], ...
     'RowHeight',{'7x','1x'});
 
