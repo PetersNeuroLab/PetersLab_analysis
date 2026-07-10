@@ -78,13 +78,11 @@ if isfield(AP_histology_processing.annotation,'ephys_path')
             probe_mapping_table.UserData.ephys_paths);
         mapped_recording_idx = find(ephys_idx ~= 0);
 
-        % (set ephys)
         probe_mapping_table.Data(mapped_recording_idx,2) = ...
             probe_mapping_table.ColumnFormat{2}(ephys_idx(ephys_idx~=0));
 
-        % (set shank)
         probe_mapping_table.Data(mapped_recording_idx,3) = ...
-            {AP_histology_processing.annotation(mapped_recording_idx).ephys_shank};
+            probe_mapping_table.ColumnFormat{2}(ephys_idx(ephys_idx~=0));
         
         probe_mapping_update(probe_mapping_table,[]);
 end
