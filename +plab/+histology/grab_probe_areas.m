@@ -22,8 +22,8 @@ for curr_shank = 1:n_shanks
         0:0.5:norm(size(av)),'linear','extrap'));
 
     % Remove points out-of-bounds of CCF
-    coord_inbounds = find(all(shank_sample_coords_ccf_fullrange > 0 & ...
-        shank_sample_coords_ccf_fullrange <= size(av),2));
+    coord_inbounds = all(shank_sample_coords_ccf_fullrange > 0 & ...
+        shank_sample_coords_ccf_fullrange <= size(av),2);
 
     shank_sample_ccf_sub = shank_sample_coords_ccf_fullrange(coord_inbounds,:);
 
