@@ -107,7 +107,8 @@ if ~isempty(eventdata)
 end
 
 % Find repeated selections (to flag as invalid)
-unchosen_idx = find(strcmp(probe_mapping_table.Data(:,2),'<No ephys>'));
+unchosen_idx = intersect(1:size(probe_mapping_table.Data(:,2),1), ...
+    find(strcmp(probe_mapping_table.Data(:,2),'<No ephys>')));
 
 same_selection_idx = ...
     find((sum(string(probe_mapping_table.Data(:,2)) == ...% ephys same
