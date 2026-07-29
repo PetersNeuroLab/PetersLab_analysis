@@ -121,15 +121,38 @@ invalid_idx = setdiff(same_selection_idx,unchosen_idx);
 valid_idx = setdiff(1:size(probe_mapping_table.Data,1), ...
     vertcat(unchosen_idx,invalid_idx));
 
-% Color table cells based on unchosen/valid/invalid
+% Find saved mappings (histology file with matching data)
+load(probe_mapping_table.UserData.histology_filename);
+
+if isfield(AP_histology_processing.annotation,'ephys_path')
+
+    [~,ephys_idx] = ismember(probe_mapping_table.Data(:,2), ...
+        probe_mapping_table.ColumnFormat{2});
+
+    recording_paths = cell(size(probe_mapping_table.Data,1),1);
+    recording_paths(ephys_idx ~= 0) = ...
+        probe_mapping_table.UserData.ephys_paths(ephys_idx(ephys_idx ~= 0));
+
+    saved_recordings = strcmp(recording_paths,{AP_histology_processing.annotation.ephys_path}') & ...
+        string(probe_mapping_table.Data(:,3)) == string({AP_histology_processing.annotation.ephys_shank})';
+else 
+    saved_recordings = false(size(probe_mapping_table.Data,1),1);
+end
+saved_idx = intersect(1:size(probe_mapping_table.Data(:,2),1), ...
+    setdiff(find(saved_recordings),unchosen_idx));
+
+% Color table cells based on unchosen(w)/invalid(r)/valid(y)/saved(g)
 unchosen_style = uistyle('BackgroundColor',[1,1,1]);
 invalid_style = uistyle('BackgroundColor',[1,0.8,0.8]);
-valid_style = uistyle('BackgroundColor',[0.8,1,0.8]);
+valid_style = uistyle('BackgroundColor',[1,1,0.8]);
+saved_style = uistyle('BackgroundColor',[0.8,1,0.8]);
 
 removeStyle(probe_mapping_table)
 addStyle(probe_mapping_table,unchosen_style,"row",unchosen_idx);
 addStyle(probe_mapping_table,invalid_style,"row",invalid_idx);
 addStyle(probe_mapping_table,valid_style,"row",valid_idx);
+addStyle(probe_mapping_table,saved_style,"row",saved_idx);
+
 end
 
 function probe_mapping_save(hObject,~,probe_mapping_table)
@@ -168,6 +191,9 @@ save(probe_mapping_table.UserData.histology_filename,'AP_histology_processing');
 uialert(hObject.Parent.Parent, ...
     sprintf('Saved histology -> ephys mappings:\n %s', ...
     probe_mapping_table.UserData.histology_filename),'Saved','Icon','success');
+
+% Update gui colors
+probe_mapping_update(probe_mapping_table,[]);
 
 end
 

@@ -62,6 +62,17 @@ for curr_shank = 1:n_shanks
 
     shank_tip_distance_sign = sign(shank_vector(end,2) - ...
         shank_sample_ccf_sub(shank_sample_area_boundaries,2));
+
+    %%%%% UNDER CONSTRUCTION: TIP DISTANCE ALONG VERTICES, NOT LINEAR
+
+    shank_vector_tipdist = ccf2mm*[cumsum(vecnorm(diff(shank_vector,[],1),2,2),'reverse');0];
+
+    x = interp3(shank_vector(:,1),shank_vector(:,2),shank_vector(:,3),shank_vector_tipdist, ...
+        shank_sample_ccf_sub(shank_sample_area_boundaries,1), ...
+        shank_sample_ccf_sub(shank_sample_area_boundaries,2), ...
+        shank_sample_ccf_sub(shank_sample_area_boundaries,3),'extrap');
+
+    %%%%%%%
    
     shank_tip_distance_signed = shank_tip_distance.*shank_tip_distance_sign;
 
