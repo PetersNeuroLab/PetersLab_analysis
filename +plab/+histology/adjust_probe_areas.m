@@ -81,7 +81,7 @@ area_labels = vertcat(string(probe_areas{1}.acronym(curr_shank_areas)),"BRAIN EN
 area_ui_lines = arrayfun(@(y,label) draw_area_line(y,label),area_y,area_labels);
 
 % Add listener for move function 
-addlistener(area_ui_lines,'MovingROI',@(src,event) area_move(src,event,area_ui_lines,unit_plot_handles));
+addlistener(area_ui_lines,'MovingROI',@(src,event) area_move(src,event,gui_fig));
 
 % Add buttons
 uibutton(gui_grid,'text','Unlock all','ButtonPushedFcn',@(varargin) set(area_ui_lines,'selected',false));
@@ -200,5 +200,17 @@ function save_areas(src,eventdata,gui_fig)
 
 % Get gui data
 gui_data = guidata(gui_fig);
+
+%%%%%% UNDER CONSTRUCTION
+
+% TO DO HERE: 
+% - replace probe area tip distances with lines
+% - interpolate ccf coordinates? 
+% - store in histology processing file
+% - if probe areas in histology file, use those on load
+
+
+%%%%%%%%%%%%%%%
+
 
 end
