@@ -1,5 +1,5 @@
-function adjust_probe_areas(animal,rec_day,probe,shank)
-% adjust_probe_areas(animal,rec_day,probe,shank)
+function adjust_probe_histology(animal,rec_day,probe,shank)
+% adjust_probe_histology(animal,rec_day,probe,shank)
 % 
 % Manually adjust probe areas based on unit distribution, rate, depth
 % correlation.
@@ -20,6 +20,11 @@ rec_time = recordings.recording{1};
 load_parts.ephys = true;
 verbose = true;
 ap.load_recording;
+
+% Check for loaded histology
+if ~exist('probe_histology','var')
+    error('%s %s: no probe histology found',animal,rec_day);
+end
 
 % Calculate MUA depth correlelogram
 mua_depth_window = 10; % MUA depth window (microns)
@@ -42,13 +47,13 @@ gui_grid = uigridlayout(gui_fig,[3,3], ...
 
 unit_axes = uiaxes(gui_grid, ...
     'Layout',matlab.ui.layout.GridLayoutOptions('Row',1, ...
-    'Column',1),'Color','w');
+    'Column',1),'Color','w','Interactions',[]);
 unit_plot_handles = ap.plot_unit_depthrate(unit_axes);
 axis(unit_axes,'tight');
 
 mua_corr_axes = uiaxes(gui_grid, ...
     'Layout',matlab.ui.layout.GridLayoutOptions('Row',1, ...
-    'Column',[2,length(gui_grid.ColumnWidth)]),'Color','k');
+    'Column',[2,length(gui_grid.ColumnWidth)]),'Color','k','Interactions',[]);
 imagesc(mua_corr_axes,mua_depth_bin_centers,mua_depth_bin_centers,mua_corr_smooth);
 clim(mua_corr_axes,[-1,1].*max(tril(abs(mua_corr),-1)*0.5,[],'all'));
 colormap(mua_corr_axes,ap.colormap('BKR'))
@@ -56,29 +61,32 @@ set(mua_corr_axes,'YDir','normal','XDir','reverse');
 
 line_axes = uiaxes(gui_grid, ...
     'Layout',matlab.ui.layout.GridLayoutOptions('Row',1, ...
-    'Column',[1,length(gui_grid.ColumnWidth)]),'Color','none');
+    'Column',[1,length(gui_grid.ColumnWidth)]),'Color','none','Interactions',[]);
 
 axis([unit_axes,mua_corr_axes,line_axes],'off')
 linkaxes([unit_axes,mua_corr_axes,line_axes],'y')
-axis(unit_axes,'tight');
+ylim([unit_axes,mua_corr_axes,line_axes],'manual')
+% axis(unit_axes,'tight');
 
 % Keep initial positions
 area_positions_initial = {unit_plot_handles.area_rectangles.Position};
 
 % Get areas on current shank
-curr_shank_areas = find(probe_areas{1}.probe_shank == shank);
+curr_shank_areas = find(probe_histology{1}.probe_shank == shank);
 
 % Plot UI area line borders (add brain end)
-draw_area_line = @(y,area_label) images.roi.Line(line_axes, ...
+draw_area_line = @(y,area_label,color) images.roi.Line(line_axes, ...
     'Position',[xlim(line_axes)',repelem(y,2,1)], ...
-    'color','w','InteractionsAllowed','translate', ...
+    'color',hex2rgb(color),'InteractionsAllowed','translate', ...
     'Label',area_label,'LabelVisible','hover', ...
     'SelectedColor','y');
 
-area_y = vertcat(probe_areas{1}.tip_distance(curr_shank_areas,1), ...
-    probe_areas{1}.tip_distance(curr_shank_areas(end),2));
-area_labels = vertcat(string(probe_areas{1}.acronym(curr_shank_areas)),"BRAIN END");
-area_ui_lines = arrayfun(@(y,label) draw_area_line(y,label),area_y,area_labels);
+area_y = vertcat(probe_histology{1}.tip_distance(curr_shank_areas,1), ...
+    probe_histology{1}.tip_distance(curr_shank_areas(end),2));
+area_labels = vertcat(string(probe_histology{1}.acronym(curr_shank_areas)),"BRAIN END");
+area_colors = rgb2hex(vertcat(min(1,0.1+hex2rgb("#"+string(probe_areas{1}.color_hex_triplet))),[1,1,1]));
+
+area_ui_lines = arrayfun(@(y,label,color) draw_area_line(y,label,color),area_y,area_labels,area_colors);
 
 % Add listener for move function 
 addlistener(area_ui_lines,'MovingROI',@(src,event) area_move(src,event,gui_fig));
@@ -90,13 +98,18 @@ uibutton(gui_grid,'text','Save','ButtonPushedFcn',{@save_areas,gui_fig});
 
 % Add guidata
 gui_data = struct;
-gui_data.area_positions_initial = area_positions_initial;
-gui_data.unit_plot_handles = unit_plot_handles;
-gui_data.area_ui_lines = area_ui_lines;
-gui_data.histology_filename = histology_filename;
-gui_data.probe_areas = probe_areas;
 gui_data.probe = probe;
 gui_data.shank = shank;
+% (histology data from load)
+gui_data.probe_vector_histology = probe_vector_histology;
+gui_data.annotation_idx = histology_annotation_shanksort(shank);
+gui_data.probe_histology = probe_histology;
+gui_data.histology_filename = histology_filename;
+% (initial positions)
+gui_data.area_positions_initial = area_positions_initial;
+% (plot handles)
+gui_data.unit_plot_handles = unit_plot_handles;
+gui_data.area_ui_lines = area_ui_lines;
 guidata(gui_fig,gui_data);
 
 end
@@ -190,7 +203,7 @@ ypos_new = vertcat(cellfun(@(pos) pos(2)+pos(4), gui_data.area_positions_initial
     gui_data.area_positions_initial{end}(2));
 area_line_pos_new = cellfun(@(pos,y) ...
     [pos(:,1),repelem(y,2,1)], ...
-    {area_ui_lines.Position}',num2cell(ypos_new),'uni',false);
+    {gui_data.area_ui_lines.Position}',num2cell(ypos_new),'uni',false);
 
 [gui_data.area_ui_lines.Position] = deal(area_line_pos_new{:});
 end
@@ -198,19 +211,27 @@ end
 
 function save_areas(src,eventdata,gui_fig)
 
+% Confirm save
+user_confirm = uiconfirm(gui_fig, ...
+    'Save probe areas?','Confirm save');
+if ~strcmpi(user_confirm,'ok')
+    return
+end
+
 % Get gui data
 gui_data = guidata(gui_fig);
 
-%%%%%% UNDER CONSTRUCTION
+load(gui_data.histology_filename)
 
-% TO DO HERE: 
-% - replace probe area tip distances with lines
-% - interpolate ccf coordinates? 
-% - store in histology processing file
-% - if probe areas in histology file, use those on load
+% Write adjusted tip distances (use area rectangles)
+probe_areas = gui_data.probe_histology{1};
+area_tipdist = cell2mat(cellfun(@(pos) [pos(2),pos(2)+pos(4)], ...
+    {gui_data.unit_plot_handles.area_rectangles.Position}','uni',false));
+probe_areas.tip_distance = area_tipdist;
 
-
-%%%%%%%%%%%%%%%
-
+% Store areas in histology processing file
+AP_histology_processing.annotation(gui_data.annotation_idx).probe_areas = probe_areas;
+save('AP_histology_processing',gui_data.histology_filename);
+disp('Saved: %s',gui_data.histology_filename);
 
 end
