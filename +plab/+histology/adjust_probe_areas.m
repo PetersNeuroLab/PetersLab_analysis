@@ -225,7 +225,7 @@ load(gui_data.histology_filename)
 
 % Write adjusted tip distances (use area rectangles)
 probe_areas = gui_data.probe_histology{1};
-area_tipdist = cell2mat(cellfun(@(pos) [pos(2),pos(2)+pos(4)], ...
+area_tipdist = cell2mat(cellfun(@(pos) [pos(2)+pos(4),pos(2)], ...
     {gui_data.unit_plot_handles.area_rectangles.Position}','uni',false));
 probe_areas.tip_distance = area_tipdist;
 
