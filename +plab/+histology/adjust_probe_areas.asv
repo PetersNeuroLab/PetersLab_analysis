@@ -63,10 +63,6 @@ line_axes = uiaxes(gui_grid, ...
     'Layout',matlab.ui.layout.GridLayoutOptions('Row',1, ...
     'Column',[1,length(gui_grid.ColumnWidth)]),'Color','none','Interactions',[]);
 
-axis([unit_axes,mua_corr_axes,line_axes],'off')
-linkaxes([unit_axes,mua_corr_axes,line_axes],'y')
-axis(unit_axes,'tight');
-
 % Keep initial positions
 area_positions_initial = {unit_plot_handles.area_rectangles.Position};
 
@@ -74,26 +70,11 @@ area_positions_initial = {unit_plot_handles.area_rectangles.Position};
 curr_shank_areas = find(probe_histology{1}.probe_shank == shank);
 
 % Plot UI area line borders (add brain end)
-draw_area_line = @(y,area_label) images.roi.Line(line_axes, ...
-    'Position',[xlim(line_axes)',repelem(y,2,1)], ...
-    'color','w','InteractionsAllowed','translate', ...
-    'Label',area_label,'LabelVisible','hover', ...
-    'SelectedColor','y');
-
-area_y = vertcat(probe_histology{1}.tip_distance(curr_shank_areas,1), ...
-    probe_histology{1}.tip_distance(curr_shank_areas(end),2));
-area_labels = vertcat(string(probe_histology{1}.acronym(curr_shank_areas)),"BRAIN END");
-area_ui_lines = arrayfun(@(y,label) draw_area_line(y,label),area_y,area_labels);
-
-
-%%%%%%%%%%%% TESTING
-
 draw_area_line = @(y,area_label,color) images.roi.Line(line_axes, ...
     'Position',[xlim(line_axes)',repelem(y,2,1)], ...
     'color',hex2rgb(color),'InteractionsAllowed','translate', ...
     'Label',area_label,'LabelVisible','hover', ...
     'SelectedColor','y');
-
 
 area_y = vertcat(probe_histology{1}.tip_distance(curr_shank_areas,1), ...
     probe_histology{1}.tip_distance(curr_shank_areas(end),2));
@@ -102,11 +83,13 @@ area_colors = rgb2hex(vertcat(min(1,0.1+hex2rgb("#"+string(probe_areas{1}.color_
 
 area_ui_lines = arrayfun(@(y,label,color) draw_area_line(y,label,color),area_y,area_labels,area_colors);
 
-
-%%%%%%%%%%%%%%%%%
-
 % Add listener for move function 
 addlistener(area_ui_lines,'MovingROI',@(src,event) area_move(src,event,gui_fig));
+
+% Link axes and set ylim
+axis([unit_axes,mua_corr_axes,line_axes],'off')
+linkaxes([unit_axes,mua_corr_axes,line_axes],'y')
+ylim([unit_axes,mua_corr_axes,line_axes],prctile(area_y,[0,100]))
 
 % Add buttons
 uibutton(gui_grid,'text','Unlock all','ButtonPushedFcn',@(varargin) set(area_ui_lines,'selected',false));
@@ -248,7 +231,7 @@ probe_areas.tip_distance = area_tipdist;
 
 % Store areas in histology processing file
 AP_histology_processing.annotation(gui_data.annotation_idx).probe_areas = probe_areas;
-save('AP_histology_processing',gui_data.histology_filename);
+save(gui_data.histology_filename,'AP_histology_processing');
 disp('Saved: %s',gui_data.histology_filename);
 
 end

@@ -63,11 +63,6 @@ line_axes = uiaxes(gui_grid, ...
     'Layout',matlab.ui.layout.GridLayoutOptions('Row',1, ...
     'Column',[1,length(gui_grid.ColumnWidth)]),'Color','none','Interactions',[]);
 
-axis([unit_axes,mua_corr_axes,line_axes],'off')
-linkaxes([unit_axes,mua_corr_axes,line_axes],'y')
-ylim([unit_axes,mua_corr_axes,line_axes],'manual')
-% axis(unit_axes,'tight');
-
 % Keep initial positions
 area_positions_initial = {unit_plot_handles.area_rectangles.Position};
 
@@ -91,6 +86,11 @@ area_ui_lines = arrayfun(@(y,label,color) draw_area_line(y,label,color),area_y,a
 % Add listener for move function 
 addlistener(area_ui_lines,'MovingROI',@(src,event) area_move(src,event,gui_fig));
 
+% Link axes and set ylim
+axis([unit_axes,mua_corr_axes,line_axes],'off')
+linkaxes([unit_axes,mua_corr_axes,line_axes],'y')
+ylim([unit_axes,mua_corr_axes,line_axes],prctile(area_y,[0,100]))
+
 % Add buttons
 uibutton(gui_grid,'text','Unlock all','ButtonPushedFcn',@(varargin) set(area_ui_lines,'selected',false));
 uibutton(gui_grid,'text','Reset','ButtonPushedFcn',{@reset_areas,gui_fig});
@@ -102,7 +102,7 @@ gui_data.probe = probe;
 gui_data.shank = shank;
 % (histology data from load)
 gui_data.probe_vector_histology = probe_vector_histology;
-gui_data.annotation_idx = histology_annotation_shanksort(shank);
+gui_data.annotation_idx = histology_annotation_match(shank);
 gui_data.probe_histology = probe_histology;
 gui_data.histology_filename = histology_filename;
 % (initial positions)
@@ -231,7 +231,7 @@ probe_areas.tip_distance = area_tipdist;
 
 % Store areas in histology processing file
 AP_histology_processing.annotation(gui_data.annotation_idx).probe_areas = probe_areas;
-save('AP_histology_processing',gui_data.histology_filename);
-disp('Saved: %s',gui_data.histology_filename);
+save(gui_data.histology_filename,'AP_histology_processing');
+fprintf('Saved: %s\n',gui_data.histology_filename);
 
 end
