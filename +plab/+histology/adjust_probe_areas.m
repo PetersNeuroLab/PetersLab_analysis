@@ -17,6 +17,7 @@ end
 % Load spike data (use first recording)
 recordings = plab.find_recordings(animal,rec_day);
 rec_time = recordings.recording{1};
+load_probe = probe;
 load_parts.ephys = true;
 verbose = true;
 ap.load_recording;
@@ -28,14 +29,15 @@ end
 
 % Calculate MUA depth correlelogram
 mua_depth_window = 10; % MUA depth window (microns)
-mua_depth_smooth = 5; % Moving window for depth bins
+mua_depth_smooth = 5; % Moving window to smooth MUA depth bins
 mua_t_window = 0.2; % MUA temporal window (seconds)
 
 mua_depth_bins = min(template_tipdist):mua_depth_window:max(template_tipdist);
 mua_depth_bin_centers = movmean(mua_depth_bins,2,'Endpoints','discard')/1000;
 
 mua_t_bins = nanmin(spike_times_timelite):mua_t_window:nanmax(spike_times_timelite);
-mua_corr = corrcoef(histcounts2(spike_times_timelite,spike_tipdist, ...
+use_spikes = template_shanks(spike_templates) == shank;
+mua_corr = corrcoef(histcounts2(spike_times_timelite(use_spikes),spike_tipdist(use_spikes), ...
     mua_t_bins,mua_depth_bins));
 mua_corr_smooth = fillmissing(smoothdata2(mua_corr,'movmean',mua_depth_smooth),'constant',0);
 
@@ -48,7 +50,7 @@ gui_grid = uigridlayout(gui_fig,[3,3], ...
 unit_axes = uiaxes(gui_grid, ...
     'Layout',matlab.ui.layout.GridLayoutOptions('Row',1, ...
     'Column',1),'Color','w','Interactions',[]);
-unit_plot_handles = ap.plot_unit_depthrate(unit_axes);
+unit_plot_handles = ap.plot_unit_depthrate(unit_axes,false,shank);
 axis(unit_axes,'tight');
 
 mua_corr_axes = uiaxes(gui_grid, ...
@@ -67,7 +69,8 @@ line_axes = uiaxes(gui_grid, ...
 area_positions_initial = {unit_plot_handles.area_rectangles.Position};
 
 % Get areas on current shank
-curr_shank_areas = find(probe_histology{1}.probe_shank == shank);
+curr_shank_areas = probe_histology.probe_shank == shank;
+probe_histology_shank = probe_histology(curr_shank_areas,:);
 
 % Plot UI area line borders (add brain end)
 draw_area_line = @(y,area_label,color) images.roi.Line(line_axes, ...
@@ -76,10 +79,11 @@ draw_area_line = @(y,area_label,color) images.roi.Line(line_axes, ...
     'Label',area_label,'LabelVisible','hover', ...
     'SelectedColor','y');
 
-area_y = vertcat(probe_histology{1}.tip_distance(curr_shank_areas,1), ...
-    probe_histology{1}.tip_distance(curr_shank_areas(end),2));
-area_labels = vertcat(string(probe_histology{1}.acronym(curr_shank_areas)),"BRAIN END");
-area_colors = rgb2hex(vertcat(min(1,0.1+hex2rgb("#"+string(probe_areas{1}.color_hex_triplet))),[1,1,1]));
+area_y = vertcat(probe_histology_shank.tip_distance(:,1), ...
+    probe_histology_shank.tip_distance(end,2));
+area_labels = vertcat(string(probe_histology_shank.acronym),"BRAIN END");
+area_colors = rgb2hex(vertcat(min(1,0.1+hex2rgb("#" + ...
+    string(probe_histology_shank.color_hex_triplet))),[1,1,1]));
 
 area_ui_lines = arrayfun(@(y,label,color) draw_area_line(y,label,color),area_y,area_labels,area_colors);
 
@@ -101,9 +105,8 @@ gui_data = struct;
 gui_data.probe = probe;
 gui_data.shank = shank;
 % (histology data from load)
-gui_data.probe_vector_histology = probe_vector_histology;
 gui_data.annotation_idx = histology_annotation_match(shank);
-gui_data.probe_histology = probe_histology;
+gui_data.probe_histology_shank = probe_histology_shank;
 gui_data.histology_filename = histology_filename;
 % (initial positions)
 gui_data.area_positions_initial = area_positions_initial;
@@ -224,7 +227,8 @@ gui_data = guidata(gui_fig);
 load(gui_data.histology_filename)
 
 % Write adjusted tip distances (use area rectangles)
-probe_areas = gui_data.probe_histology{1};
+probe_areas = gui_data.probe_histology_shank;
+
 area_tipdist = cell2mat(cellfun(@(pos) [pos(2)+pos(4),pos(2)], ...
     {gui_data.unit_plot_handles.area_rectangles.Position}','uni',false));
 probe_areas.tip_distance = area_tipdist;

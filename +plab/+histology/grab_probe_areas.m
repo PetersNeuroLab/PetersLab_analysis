@@ -82,4 +82,4 @@ for curr_shank = 1:n_shanks
 
 end
 
-probe_areas = {vertcat(shank_areas{:})};
+probe_areas = vertcat(shank_areas{:});
