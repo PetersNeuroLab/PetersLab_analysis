@@ -22,8 +22,10 @@ load_parts.ephys = true;
 verbose = true;
 ap.load_recording;
 
-% Check for loaded histology
-if ~exist('probe_histology','var')
+% Grab probe histology areas new (discard previous adjustments)
+if ~exist('probe_vector_histology','var')
+    probe_histology = plab.histology.grab_probe_areas(probe_vector_histology);
+else
     error('%s %s: no probe histology found',animal,rec_day);
 end
 
