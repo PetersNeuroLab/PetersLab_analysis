@@ -1,5 +1,5 @@
-function adjust_probe_histology(animal,rec_day,probe,shank)
-% adjust_probe_histology(animal,rec_day,probe,shank)
+function adjust_probe_areas(animal,rec_day,probe,shank)
+% adjust_probe_areas(animal,rec_day,probe,shank)
 % 
 % Manually adjust probe areas based on unit distribution, rate, depth
 % correlation.
@@ -22,9 +22,9 @@ load_parts.ephys = true;
 verbose = true;
 ap.load_recording;
 
-% Grab probe histology areas new (discard previous adjustments)
-if ~exist('probe_vector_histology','var')
-    probe_histology = plab.histology.grab_probe_areas(probe_vector_histology);
+% Grab probe histology areas (fresh - discard previous adjustments)
+if exist('probe_vector_histology','var')
+    probe_areas = plab.histology.grab_probe_areas(probe_vector_histology);
 else
     error('%s %s: no probe histology found',animal,rec_day);
 end
@@ -71,8 +71,8 @@ line_axes = uiaxes(gui_grid, ...
 area_positions_initial = {unit_plot_handles.area_rectangles.Position};
 
 % Get areas on current shank
-curr_shank_areas = probe_histology.probe_shank == shank;
-probe_histology_shank = probe_histology(curr_shank_areas,:);
+curr_shank_areas = probe_areas.probe_shank == shank;
+probe_areas_shank = probe_areas(curr_shank_areas,:);
 
 % Plot UI area line borders (add brain end)
 draw_area_line = @(y,area_label,color) images.roi.Line(line_axes, ...
@@ -81,11 +81,11 @@ draw_area_line = @(y,area_label,color) images.roi.Line(line_axes, ...
     'Label',area_label,'LabelVisible','hover', ...
     'SelectedColor','y');
 
-area_y = vertcat(probe_histology_shank.tip_distance(:,1), ...
-    probe_histology_shank.tip_distance(end,2));
-area_labels = vertcat(string(probe_histology_shank.acronym),"BRAIN END");
+area_y = vertcat(probe_areas_shank.tip_distance(:,1), ...
+    probe_areas_shank.tip_distance(end,2));
+area_labels = vertcat(string(probe_areas_shank.acronym),"BRAIN END");
 area_colors = rgb2hex(vertcat(min(1,0.1+hex2rgb("#" + ...
-    string(probe_histology_shank.color_hex_triplet))),[1,1,1]));
+    string(probe_areas_shank.color_hex_triplet))),[1,1,1]));
 
 area_ui_lines = arrayfun(@(y,label,color) draw_area_line(y,label,color),area_y,area_labels,area_colors);
 
@@ -108,7 +108,7 @@ gui_data.probe = probe;
 gui_data.shank = shank;
 % (histology data from load)
 gui_data.annotation_idx = histology_annotation_match(shank);
-gui_data.probe_histology_shank = probe_histology_shank;
+gui_data.probe_areas_shank = probe_areas_shank;
 gui_data.histology_filename = histology_filename;
 % (initial positions)
 gui_data.area_positions_initial = area_positions_initial;
@@ -229,7 +229,7 @@ gui_data = guidata(gui_fig);
 load(gui_data.histology_filename)
 
 % Write adjusted tip distances (use area rectangles)
-probe_areas = gui_data.probe_histology_shank;
+probe_areas = gui_data.probe_areas_shank;
 
 area_tipdist = cell2mat(cellfun(@(pos) [pos(2)+pos(4),pos(2)], ...
     {gui_data.unit_plot_handles.area_rectangles.Position}','uni',false));
