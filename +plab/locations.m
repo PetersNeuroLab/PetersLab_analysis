@@ -15,12 +15,9 @@ classdef locations
         mousecam_port = 50003
         widefield_port = 50004
 
-        % Local bonsai workflow folder
-        local_workflow_path = 'C:\Users\peterslab\Documents\GitHub\PetersLab_rigging\bonsai_workflows';
-
-        % Github paths
-        github_rigging = 'C:\Users\peterslab\Documents\GitHub\PetersLab_rigging';
-
+        % Github path (repo clones in this folder)
+        github_path = fullfile('C:\Users',getenv('USERNAME'),'Documents','GitHub');
+       
     end
 
     methods(Static)
