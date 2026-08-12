@@ -128,10 +128,13 @@ for curr_probe = 1:length(oe_probes)
 end
 
 %% Move kilosort results to server
+
 disp('Moving sorted data to server...');
+
 server_kilosort_path = strrep(local_kilosort_path, ...
     plab.locations.local_data_path, ...
     plab.locations.server_data_path);
+
 [status,message] = movefile(local_kilosort_path,server_kilosort_path);
 if ~status
     warning('Failed moving to server: %s',message);
@@ -141,9 +144,10 @@ end
 
 %% Move raw data to server
 
+disp('Moving raw data to server...');
+
 local_ephys_path = fullfile(data_path,'*');
 
-disp('Moving raw data to server...');
 [status,message] = movefile(local_ephys_path,server_ephys_path);
 if ~status
     warning('Failed moving to server: %s',message);
