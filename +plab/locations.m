@@ -9,11 +9,13 @@ classdef locations
         server_path = '\\qnap-ap001.dpag.ox.ac.uk\APlab\';
         server_data_path = fullfile(plab.locations.server_path,'Data');
 
-        % Ports for tcp servers and clients
-        bonsai_port = 50001
-        timelite_port = 50002
-        mousecam_port = 50003
-        widefield_port = 50004
+        % Ports for network communication
+        bonsai_port = 50001 % (set in experiment controller)
+        timelite_port = 50002 % (set in experiment controller)
+        mousecam_port = 50003 % (set in experiment controller)
+        widefield_port = 50004 % (set in experiment controller)
+        ephys_port = 37497 % (set by Open Ephys, 'EPHYS' keypad)
+        nte_port = 27683 % (set by NTE, 'APNTE' on keypad)
 
         % Github path (repo clones in this folder)
         github_path = fullfile('C:\Users',getenv('USERNAME'),'Documents','GitHub');
