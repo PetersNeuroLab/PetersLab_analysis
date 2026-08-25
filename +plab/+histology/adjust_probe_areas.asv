@@ -85,7 +85,7 @@ draw_area_line = @(y,area_label,color) images.roi.Line(line_axes, ...
 
 area_y = vertcat(probe_areas_shank.tip_distance(:,1), ...
     probe_areas_shank.tip_distance(end,2));
-area_labels = vertcat(string(probe_areas_shank.acronym),"BRAIN END");
+area_labels = vertcat(string(probe_areas_shank.safe_name),"BRAIN END");
 area_colors = rgb2hex(vertcat(min(1,0.1+hex2rgb("#" + ...
     string(probe_areas_shank.color_hex_triplet))),[1,1,1]));
 
@@ -98,6 +98,7 @@ addlistener(area_ui_lines,'MovingROI',@(src,event) area_move(src,event,gui_fig))
 axis([unit_axes,mua_corr_axes,line_axes],'off')
 linkaxes([unit_axes,mua_corr_axes,line_axes],'y')
 ylim([unit_axes,mua_corr_axes,line_axes],prctile(area_y,[0,100]))
+ylim([unit_axes,mua_corr_axes,line_axes],prctile(template_tipdist(template_shanks==shank)/1000,[0,100]))
 
 % Add buttons
 uibutton(gui_grid,'text','Unlock all','ButtonPushedFcn',@(varargin) set(area_ui_lines,'selected',false));

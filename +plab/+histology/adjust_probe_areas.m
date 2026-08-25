@@ -94,11 +94,14 @@ area_ui_lines = arrayfun(@(y,label,color) draw_area_line(y,label,color),area_y,a
 % Add listener for move function 
 addlistener(area_ui_lines,'MovingROI',@(src,event) area_move(src,event,gui_fig));
 
-% Link axes and set ylim
+% Link axes and set limits
 axis([unit_axes,mua_corr_axes,line_axes],'off')
 linkaxes([unit_axes,mua_corr_axes,line_axes],'y')
+xlim(mua_corr_axes,prctile(template_tipdist(template_shanks==shank)/1000,[0,100]))
 % ylim([unit_axes,mua_corr_axes,line_axes],prctile(area_y,[0,100]))
-ylim([unit_axes,mua_corr_axes,line_axes],prctile(template_tipdist/1000,[0,100]))
+ylim([unit_axes,mua_corr_axes,line_axes], ...
+    prctile(template_tipdist(template_shanks==shank)/1000,[0,100]) + ...
+    [-0.5,0.5]); 
 
 % Add buttons
 uibutton(gui_grid,'text','Unlock all','ButtonPushedFcn',@(varargin) set(area_ui_lines,'selected',false));
