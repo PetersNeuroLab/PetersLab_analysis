@@ -29,9 +29,6 @@ else
     error('%s %s: no probe histology found',animal,rec_day);
 end
 
-%%%%%%%%%%%%%%% UNDER CONSTRUCTION:
-% LOOP THROUGH ALL SHANKS?
-
 % Create gui
 gui_fig = uifigure('Name','Adjust regions on probe', ...
     'Units','normalized','Position',[0,0.1,0.2,0.8]);
@@ -40,6 +37,7 @@ shanks = unique(probe_areas.probe_shank);
 shank_grid = uigridlayout(gui_fig,[2,length(shanks)], ...
     'RowHeight',{'7x','1x'}, 'ColumnSpacing',0);
 
+% Loop through shanks and draw gui
 for shank = reshape(shanks,1,[])
 
     % Calculate MUA depth correlelogram
@@ -108,8 +106,10 @@ for shank = reshape(shanks,1,[])
     xlim(mua_corr_axes,prctile(template_tipdist(template_shanks==shank)/1000,[0,100]))
     % ylim([unit_axes,mua_corr_axes,line_axes],prctile(area_y,[0,100]))
     ylim([unit_axes,mua_corr_axes,line_axes], ...
-        prctile(template_tipdist(template_shanks==shank)/1000,[0,100]) + ...
+        prctile(template_tipdist/1000,[0,100]) + ...
         [-0.5,0.5]);
+
+    drawnow;
 
     % Add guidata
     gui_data = struct;
