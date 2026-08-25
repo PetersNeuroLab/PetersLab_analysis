@@ -1,4 +1,4 @@
-function adjust_probe_areas(animal,rec_day,probe,shank)
+function adjust_probe_areas(animal,rec_day,probe)
 % adjust_probe_areas(animal,rec_day,probe,shank)
 % 
 % Manually adjust probe areas based on unit distribution, rate, depth
@@ -11,7 +11,6 @@ arguments
     animal {mustBeNonempty}
     rec_day {mustBeNonempty}
     probe = 1
-    shank = 1
 end
 
 % Load spike data (use first recording)
@@ -30,97 +29,110 @@ else
     error('%s %s: no probe histology found',animal,rec_day);
 end
 
-% Calculate MUA depth correlelogram
-mua_depth_window = 10; % MUA depth window (microns)
-mua_depth_smooth = 5; % Moving window to smooth MUA depth bins
-mua_t_window = 0.2; % MUA temporal window (seconds)
-
-mua_depth_bins = min(template_tipdist):mua_depth_window:max(template_tipdist);
-mua_depth_bin_centers = movmean(mua_depth_bins,2,'Endpoints','discard')/1000;
-
-mua_t_bins = nanmin(spike_times_timelite):mua_t_window:nanmax(spike_times_timelite);
-use_spikes = template_shanks(spike_templates) == shank;
-mua_corr = corrcoef(histcounts2(spike_times_timelite(use_spikes),spike_tipdist(use_spikes), ...
-    mua_t_bins,mua_depth_bins));
-mua_corr_smooth = fillmissing(smoothdata2(mua_corr,'movmean',mua_depth_smooth),'constant',0);
+%%%%%%%%%%%%%%% UNDER CONSTRUCTION:
+% LOOP THROUGH ALL SHANKS?
 
 % Create gui
 gui_fig = uifigure('Name','Adjust regions on probe', ...
     'Units','normalized','Position',[0,0.1,0.2,0.8]);
-gui_grid = uigridlayout(gui_fig,[3,3], ...
-    'RowHeight',{'7x','1x'},'BackgroundColor','k', ...
-    'ColumnSpacing',0);
 
-unit_axes = uiaxes(gui_grid, ...
-    'Layout',matlab.ui.layout.GridLayoutOptions('Row',1, ...
-    'Column',1),'Color','w','Interactions',[]);
-unit_plot_handles = ap.plot_unit_depthrate(unit_axes,false,shank);
-axis(unit_axes,'tight');
+shanks = unique(probe_areas.probe_shank);
+shank_grid = uigridlayout(gui_fig,[2,length(shanks)], ...
+    'RowHeight',{'7x','1x'}, 'ColumnSpacing',0);
 
-mua_corr_axes = uiaxes(gui_grid, ...
-    'Layout',matlab.ui.layout.GridLayoutOptions('Row',1, ...
-    'Column',[2,length(gui_grid.ColumnWidth)]),'Color','k','Interactions',[]);
-imagesc(mua_corr_axes,mua_depth_bin_centers,mua_depth_bin_centers,mua_corr_smooth);
-clim(mua_corr_axes,[-1,1].*max(tril(abs(mua_corr),-1)*0.5,[],'all'));
-colormap(mua_corr_axes,ap.colormap('BKR'))
-set(mua_corr_axes,'YDir','normal','XDir','reverse');
+for shank = reshape(shanks,1,[])
 
-line_axes = uiaxes(gui_grid, ...
-    'Layout',matlab.ui.layout.GridLayoutOptions('Row',1, ...
-    'Column',[1,length(gui_grid.ColumnWidth)]),'Color','none','Interactions',[]);
+    % Calculate MUA depth correlelogram
+    mua_depth_window = 10; % MUA depth window (microns)
+    mua_depth_smooth = 5; % Moving window to smooth MUA depth bins
+    mua_t_window = 0.2; % MUA temporal window (seconds)
 
-% Keep initial positions
-area_positions_initial = {unit_plot_handles.area_rectangles.Position};
+    mua_depth_bins = min(template_tipdist):mua_depth_window:max(template_tipdist);
+    mua_depth_bin_centers = movmean(mua_depth_bins,2,'Endpoints','discard')/1000;
 
-% Get areas on current shank
-curr_shank_areas = probe_areas.probe_shank == shank;
-probe_areas_shank = probe_areas(curr_shank_areas,:);
+    mua_t_bins = nanmin(spike_times_timelite):mua_t_window:nanmax(spike_times_timelite);
+    use_spikes = template_shanks(spike_templates) == shank;
+    mua_corr = corrcoef(histcounts2(spike_times_timelite(use_spikes),spike_tipdist(use_spikes), ...
+        mua_t_bins,mua_depth_bins));
+    mua_corr_smooth = fillmissing(smoothdata2(mua_corr,'movmean',mua_depth_smooth),'constant',0);
 
-% Plot UI area line borders (add brain end)
-draw_area_line = @(y,area_label,color) images.roi.Line(line_axes, ...
-    'Position',[xlim(line_axes)',repelem(y,2,1)], ...
-    'color',hex2rgb(color),'InteractionsAllowed','translate', ...
-    'Label',area_label,'LabelVisible','hover', ...
-    'SelectedColor','y');
+    % Create grid and axes
+    gui_grid = uigridlayout(shank_grid,[1,3], ...
+        'RowHeight',{'7x','1x'},'BackgroundColor','k', ...
+        'ColumnSpacing',0);
 
-area_y = vertcat(probe_areas_shank.tip_distance(:,1), ...
-    probe_areas_shank.tip_distance(end,2));
-area_labels = vertcat(string(probe_areas_shank.safe_name),"BRAIN END");
-area_colors = rgb2hex(vertcat(min(1,0.1+hex2rgb("#" + ...
-    string(probe_areas_shank.color_hex_triplet))),[1,1,1]));
+    unit_axes = uiaxes(gui_grid, ...
+        'Layout',matlab.ui.layout.GridLayoutOptions('Column',1),'Color','w','Interactions',[]);
+    unit_plot_handles = ap.plot_unit_depthrate(unit_axes,false,shank);
+    axis(unit_axes,'tight');
 
-area_ui_lines = arrayfun(@(y,label,color) draw_area_line(y,label,color),area_y,area_labels,area_colors);
+    mua_corr_axes = uiaxes(gui_grid, ...
+        'Layout',matlab.ui.layout.GridLayoutOptions('Column',[2,length(gui_grid.ColumnWidth)]),'Color','k','Interactions',[]);
+    imagesc(mua_corr_axes,mua_depth_bin_centers,mua_depth_bin_centers,mua_corr_smooth);
+    clim(mua_corr_axes,[-1,1].*max(tril(abs(mua_corr),-1)*0.5,[],'all'));
+    colormap(mua_corr_axes,ap.colormap('BKR'))
+    set(mua_corr_axes,'YDir','normal','XDir','reverse');
 
-% Add listener for move function 
-addlistener(area_ui_lines,'MovingROI',@(src,event) area_move(src,event,gui_fig));
+    line_axes = uiaxes(gui_grid, ...
+        'Layout',matlab.ui.layout.GridLayoutOptions('Row',1, ...
+        'Column',[1,length(gui_grid.ColumnWidth)]),'Color','none','Interactions',[]);
 
-% Link axes and set limits
-axis([unit_axes,mua_corr_axes,line_axes],'off')
-linkaxes([unit_axes,mua_corr_axes,line_axes],'y')
-xlim(mua_corr_axes,prctile(template_tipdist(template_shanks==shank)/1000,[0,100]))
-% ylim([unit_axes,mua_corr_axes,line_axes],prctile(area_y,[0,100]))
-ylim([unit_axes,mua_corr_axes,line_axes], ...
-    prctile(template_tipdist(template_shanks==shank)/1000,[0,100]) + ...
-    [-0.5,0.5]); 
+    % Keep initial positions
+    area_positions_initial = {unit_plot_handles.area_rectangles.Position};
+
+    % Get areas on current shank
+    curr_shank_areas = probe_areas.probe_shank == shank;
+    probe_areas_shank = probe_areas(curr_shank_areas,:);
+
+    % Plot UI area line borders (add brain end)
+    draw_area_line = @(y,area_label,color) images.roi.Line(line_axes, ...
+        'Position',[xlim(line_axes)',repelem(y,2,1)], ...
+        'color',hex2rgb(color),'InteractionsAllowed','translate', ...
+        'Label',area_label,'LabelVisible','hover', ...
+        'SelectedColor','y');
+
+    area_y = vertcat(probe_areas_shank.tip_distance(:,1), ...
+        probe_areas_shank.tip_distance(end,2));
+    area_labels = vertcat(string(probe_areas_shank.safe_name),"BRAIN END");
+    area_colors = rgb2hex(vertcat(min(1,0.1+hex2rgb("#" + ...
+        string(probe_areas_shank.color_hex_triplet))),[1,1,1]));
+
+    area_ui_lines = arrayfun(@(y,label,color) draw_area_line(y,label,color),area_y,area_labels,area_colors);
+
+    % Add listener for move function
+    addlistener(area_ui_lines,'MovingROI',@(src,event) area_move(src,event,gui_fig));
+
+    % Link axes and set limits
+    axis([unit_axes,mua_corr_axes,line_axes],'off')
+    linkaxes([unit_axes,mua_corr_axes,line_axes],'y')
+    xlim(mua_corr_axes,prctile(template_tipdist(template_shanks==shank)/1000,[0,100]))
+    % ylim([unit_axes,mua_corr_axes,line_axes],prctile(area_y,[0,100]))
+    ylim([unit_axes,mua_corr_axes,line_axes], ...
+        prctile(template_tipdist(template_shanks==shank)/1000,[0,100]) + ...
+        [-0.5,0.5]);
+
+    % Add guidata
+    gui_data = struct;
+    gui_data.probe = probe;
+    gui_data.shank = shank;
+    % (histology data from load)
+    gui_data.annotation_idx = histology_annotation_match(shank);
+    gui_data.probe_areas_shank = probe_areas_shank;
+    gui_data.histology_filename = histology_filename;
+    % (initial positions)
+    gui_data.area_positions_initial = area_positions_initial;
+    % (plot handles)
+    gui_data.unit_plot_handles = unit_plot_handles;
+    gui_data.area_ui_lines = area_ui_lines;
+
+end
 
 % Add buttons
-uibutton(gui_grid,'text','Unlock all','ButtonPushedFcn',@(varargin) set(area_ui_lines,'selected',false));
-uibutton(gui_grid,'text','Reset','ButtonPushedFcn',{@reset_areas,gui_fig});
-uibutton(gui_grid,'text','Save','ButtonPushedFcn',{@save_areas,gui_fig});
+uibutton(gui_fig,'text','Unlock all','ButtonPushedFcn',@(varargin) set(area_ui_lines,'selected',false));
+uibutton(gui_fig,'text','Reset','ButtonPushedFcn',{@reset_areas,gui_fig});
+uibutton(gui_fig,'text','Save','ButtonPushedFcn',{@save_areas,gui_fig});
 
-% Add guidata
-gui_data = struct;
-gui_data.probe = probe;
-gui_data.shank = shank;
-% (histology data from load)
-gui_data.annotation_idx = histology_annotation_match(shank);
-gui_data.probe_areas_shank = probe_areas_shank;
-gui_data.histology_filename = histology_filename;
-% (initial positions)
-gui_data.area_positions_initial = area_positions_initial;
-% (plot handles)
-gui_data.unit_plot_handles = unit_plot_handles;
-gui_data.area_ui_lines = area_ui_lines;
+% Store guidata
 guidata(gui_fig,gui_data);
 
 end
