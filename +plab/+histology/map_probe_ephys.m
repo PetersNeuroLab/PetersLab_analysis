@@ -110,11 +110,10 @@ end
 unchosen_idx = intersect(1:size(probe_mapping_table.Data(:,2),1), ...
     find(strcmp(probe_mapping_table.Data(:,2),'<No ephys>')));
 
-same_selection_idx = ...
-    find((sum(string(probe_mapping_table.Data(:,2)) == ...% ephys same
-    string(probe_mapping_table.Data(:,2)'),2) > 1) & ...
-    (sum(string(probe_mapping_table.Data(:,3)) == ... % shank same
-    string(probe_mapping_table.Data(:,3)'),2) > 1));
+selection_address = arrayfun(@(x) strjoin(string( ...
+    probe_mapping_table.Data(x,2:3))), ...
+    1:height(probe_mapping_table.Data))';
+same_selection_idx = find(sum(selection_address == selection_address',2) > 1);
 
 invalid_idx = setdiff(same_selection_idx,unchosen_idx);
 
@@ -149,9 +148,9 @@ saved_style = uistyle('BackgroundColor',[0.8,1,0.8]);
 
 removeStyle(probe_mapping_table)
 addStyle(probe_mapping_table,unchosen_style,"row",unchosen_idx);
-addStyle(probe_mapping_table,invalid_style,"row",invalid_idx);
 addStyle(probe_mapping_table,valid_style,"row",valid_idx);
 addStyle(probe_mapping_table,saved_style,"row",saved_idx);
+addStyle(probe_mapping_table,invalid_style,"row",invalid_idx);
 
 end
 
