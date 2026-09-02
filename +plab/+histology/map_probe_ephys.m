@@ -158,7 +158,7 @@ function probe_mapping_save(hObject,~,probe_mapping_table)
 % Save mappings
 
 % If any invalid (doubled) mappings, warn and abort)
-if ~isempty(probe_mapping_table.StyleConfigurations.TargetIndex{2})
+if ~isempty(probe_mapping_table.StyleConfigurations.TargetIndex{4})
     uialert(hObject.Parent.Parent,'Cannot save: invalid mappings present','Save error');
     return
 end
