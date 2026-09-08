@@ -50,8 +50,8 @@ shank_data = struct;
 for shank = reshape(shanks,1,[])
 
     % Calculate MUA depth correlelogram
-    mua_depth_window = 10; % MUA depth window (microns)
-    mua_depth_smooth = 5; % Moving window to smooth MUA depth bins
+    mua_depth_window = 0.1; % MUA depth window (mm)
+    mua_depth_smooth = 0.05; % Moving window to smooth MUA depth bins
     mua_t_window = 0.2; % MUA temporal window (seconds)
 
     mua_depth_bins = min(template_tipdist):mua_depth_window:max(template_tipdist);
@@ -76,7 +76,7 @@ for shank = reshape(shanks,1,[])
     mua_corr_axes = uiaxes(unit_grid, ...
         'Layout',matlab.ui.layout.GridLayoutOptions('Column',[2,length(unit_grid.ColumnWidth)]),'Color','k','Interactions',[]);
     imagesc(mua_corr_axes,mua_depth_bin_centers,mua_depth_bin_centers,mua_corr_smooth);
-    clim(mua_corr_axes,[-1,1].*max(tril(abs(mua_corr),-1)*0.5,[],'all'));
+    clim(mua_corr_axes,[-1,1].*max(tril(abs(mua_corr),-1)*0.8,[],'all'));
     colormap(mua_corr_axes,ap.colormap('BKR'))
     set(mua_corr_axes,'YDir','normal','XDir','reverse');
 
@@ -109,7 +109,7 @@ for shank = reshape(shanks,1,[])
     % Link axes and set limits
     axis([unit_axes,mua_corr_axes,line_axes],'off')
     linkaxes([unit_axes,mua_corr_axes,line_axes],'y')
-    xlim(mua_corr_axes,prctile(template_tipdist(template_shanks==shank)/1000,[0,100]))
+    xlim(mua_corr_axes,prctile(template_tipdist(template_shanks==shank),[0,100]))
     % ylim([unit_axes,mua_corr_axes,line_axes],prctile(area_y,[0,100]))
     ylim([unit_axes,mua_corr_axes,line_axes], ...
         prctile(template_tipdist,[0,100]) + ...
