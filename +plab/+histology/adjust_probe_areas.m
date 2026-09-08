@@ -55,7 +55,7 @@ for shank = reshape(shanks,1,[])
     mua_t_window = 0.2; % MUA temporal window (seconds)
 
     mua_depth_bins = min(template_tipdist):mua_depth_window:max(template_tipdist);
-    mua_depth_bin_centers = movmean(mua_depth_bins,2,'Endpoints','discard')/1000;
+    mua_depth_bin_centers = movmean(mua_depth_bins,2,'Endpoints','discard');
 
     mua_t_bins = nanmin(spike_times_timelite):mua_t_window:nanmax(spike_times_timelite);
     use_spikes = template_shanks(spike_templates) == shank;
@@ -112,7 +112,7 @@ for shank = reshape(shanks,1,[])
     xlim(mua_corr_axes,prctile(template_tipdist(template_shanks==shank)/1000,[0,100]))
     % ylim([unit_axes,mua_corr_axes,line_axes],prctile(area_y,[0,100]))
     ylim([unit_axes,mua_corr_axes,line_axes], ...
-        prctile(template_tipdist/1000,[0,100]) + ...
+        prctile(template_tipdist,[0,100]) + ...
         [-0.5,0.5]);
 
     drawnow;
