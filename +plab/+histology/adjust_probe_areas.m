@@ -51,7 +51,7 @@ for shank = reshape(shanks,1,[])
 
     % Calculate MUA depth correlelogram
     mua_depth_window = 0.1; % MUA depth window (mm)
-    mua_depth_smooth = 0.05; % Moving window to smooth MUA depth bins
+    mua_depth_smooth = 5; % Moving window to smooth MUA depth bins
     mua_t_window = 0.2; % MUA temporal window (seconds)
 
     mua_depth_bins = min(template_tipdist):mua_depth_window:max(template_tipdist);
