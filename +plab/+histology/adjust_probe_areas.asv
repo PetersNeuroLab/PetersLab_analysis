@@ -76,7 +76,7 @@ for shank = reshape(shanks,1,[])
     mua_corr_axes = uiaxes(unit_grid, ...
         'Layout',matlab.ui.layout.GridLayoutOptions('Column',[2,length(unit_grid.ColumnWidth)]),'Color','k','Interactions',[]);
     imagesc(mua_corr_axes,mua_depth_bin_centers,mua_depth_bin_centers,mua_corr_smooth);
-    clim(mua_corr_axes,[-1,1].*max(tril(abs(mua_corr_smooth),-1)*0.5,[],'all'));
+    clim(mua_corr_axes,[-1,1].*max(tril(abs(mua_corr),-1)*0.8,[],'all'));
     colormap(mua_corr_axes,ap.colormap('BKR'))
     set(mua_corr_axes,'YDir','normal','XDir','reverse');
 
