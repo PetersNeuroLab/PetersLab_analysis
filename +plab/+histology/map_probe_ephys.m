@@ -73,12 +73,12 @@ uibutton(gui_grid,'text','3D plot','ButtonPushedFcn',{@probe_plot,animal});
 % Apply previously saved mappings
 load(probe_mapping_table.UserData.histology_filename);
 if isfield(AP_histology_processing.annotation,'ephys_path')
-    % (ensure empty arrays are strings)
+
+    mapped_idx = ~cellfun(@isempty,{AP_histology_processing.annotation.ephys_path});
     [~,ephys_idx] = ismember(...
-        string(cellfun(@char,{AP_histology_processing.annotation.ephys_path},'uni',false)), ...
+        {AP_histology_processing.annotation(mapped_idx).ephys_path}, ...
         probe_mapping_table.UserData.ephys_paths);
-    % (first option is empty: look for > 1)
-    mapped_recording_idx = find(ephys_idx > 1);
+    mapped_recording_idx = find(ephys_idx ~= 0);
 
     % (set ephys)
     probe_mapping_table.Data(mapped_recording_idx,2) = ...
@@ -135,7 +135,8 @@ if isfield(AP_histology_processing.annotation,'ephys_path')
         probe_mapping_table.UserData.ephys_paths(ephys_idx(ephys_idx ~= 0));
 
     saved_recordings = strcmp(recording_paths,{AP_histology_processing.annotation.ephys_path}') & ...
-        string(probe_mapping_table.Data(:,3)) == string({AP_histology_processing.annotation.ephys_shank})';
+        string(probe_mapping_table.Data(:,3)) == ...
+        string(cellfun(@num2str,{AP_histology_processing.annotation.ephys_shank},'uni',false))';
 else 
     saved_recordings = false(size(probe_mapping_table.Data,1),1);
 end
