@@ -37,7 +37,8 @@ gui_data.annotation_idx = histology_annotation_match;
 gui_data.probe_areas = probe_areas;
 
 % Create gui
-gui_fig = uifigure('Name','Adjust regions on probe', ...
+gui_fig = uifigure('Name', ...
+    sprintf('Adjust regions on probe: %s %s',animal,rec_day), ...
     'Units','normalized','Position',[0,0.1,0.2,0.8]);
 
 shanks = unique(probe_areas.probe_shank);
