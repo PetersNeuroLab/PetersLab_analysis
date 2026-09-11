@@ -18,7 +18,7 @@ recordings = plab.find_recordings(animal,rec_day);
 rec_time = recordings.recording{1};
 load_probe = probe;
 load_parts.ephys = true;
-load_parts.ephys_axons = true;
+load_parts.ephys_axons = false; % not sure yet - better to see or exclude?
 verbose = true;
 ap.load_recording;
 
