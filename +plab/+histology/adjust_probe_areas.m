@@ -13,9 +13,10 @@ arguments
     probe = 1
 end
 
-% Load spike data (use first recording)
+% Load spike data
+% (any recording loads all spike data - use last)
 recordings = plab.find_recordings(animal,rec_day);
-rec_time = recordings.recording{find(~cellfun(@isempty,recordings.workflow),1)};
+rec_time = recordings.recording{end};
 load_probe = probe;
 load_parts.ephys = true;
 load_parts.ephys_axons = false; % not sure yet - better to see or exclude?

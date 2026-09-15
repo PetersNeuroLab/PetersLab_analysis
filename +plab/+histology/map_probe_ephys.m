@@ -74,18 +74,18 @@ uibutton(gui_grid,'text','3D plot','ButtonPushedFcn',{@probe_plot,animal});
 load(probe_mapping_table.UserData.histology_filename);
 if isfield(AP_histology_processing.annotation,'ephys_path')
 
-    mapped_idx = ~cellfun(@isempty,{AP_histology_processing.annotation.ephys_path});
+    mapped_idx = find(~cellfun(@isempty,{AP_histology_processing.annotation.ephys_path}));
     [~,ephys_idx] = ismember(...
         {AP_histology_processing.annotation(mapped_idx).ephys_path}, ...
         probe_mapping_table.UserData.ephys_paths);
     mapped_recording_idx = find(ephys_idx ~= 0);
 
     % (set ephys)
-    probe_mapping_table.Data(mapped_recording_idx,2) = ...
+    probe_mapping_table.Data(mapped_idx(mapped_recording_idx),2) = ...
         probe_mapping_table.ColumnFormat{2}(ephys_idx(mapped_recording_idx));
 
     % (set shank)
-    probe_mapping_table.Data(mapped_recording_idx,3) = ...
+    probe_mapping_table.Data(mapped_idx(mapped_recording_idx),3) = ...
         {AP_histology_processing.annotation(mapped_recording_idx).ephys_shank};
 
     probe_mapping_update(probe_mapping_table,[]);
